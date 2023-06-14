@@ -1,5 +1,7 @@
-
-##download data from paleobiodb including full record
+##
+##
+##function: 
+#download data from paleobiodb (might take a long time for very large taxa, esp. if full=T)
 pdb<-function(taxon="", interval="all", full=FALSE){
 
 if(full==TRUE){
@@ -22,12 +24,14 @@ occ$min_ma->occ$lag#for colname compatibility with paleobiodb package
 occ$max_ma->occ$eag#for colname compatibility with paleobiodb package
 return(occ)
 }
-#
-#
-#
+###
+###
 
 
-##select subtaxa of rank rank from a csv table downloaded via pdb with option full=T
+##
+##
+##function: 
+#select subtaxa of rank="rank" from a csv table downloaded via pdb() with option full=T
 stax.sel<-function(data,taxa, rank="class"){
 tmp<-numeric()
 
@@ -37,16 +41,15 @@ c(tmp, ids)->tmp
 }
 return(tmp)
 }
-#
-#
-#
+###
+###
 
 
 
 ##
 ##
 ##function: 
-#make species table with earliest (eag) and latest (lag) occurrence dates for each unique factor value of tna
+#make "species table" from occurrence records (output of pdb), with earliest (eag) and latest (lag) occurrence dates for each unique factor value of tna (taxon name). Output is a data.frame containing the species and their respective stratigraphic range (based on their occurrence records)
 mk.sptab<-function(xx,tax="taxon_name"){
 sptab<-levels(factor(xx$tna))
 n<-length(sptab)
@@ -71,7 +74,7 @@ return(sptab)
 ##
 ##
 ##function:
-#for counting number of species at a given numerical age
+#This function counts the number of species in a "species table" (output of mk.sptab) at a given point in time x
 divdistr<-function(x,table=sptab){
 which(table$min<=x)->a
 which(table$max>=x)->b
@@ -86,7 +89,7 @@ return(length)
 ##
 ##
 ##function
-#wrapper around divdistr function for applicability to vectors
+#wrapper around divdistr function; generalized function for applicability to vectors (i.e. several values of x, can be used to graph species diversity through time, e.g. with curve(divdistr_(x,sptab) or with ggplot2)
 divdistr_<-function(x, table=sptab){
 length(x)->n
 rep(NA,n)->tmp
@@ -101,7 +104,7 @@ return(tmp)
 ##
 ##
 ##function:
-#count number of species in particular interval
+#counts number of species ocurring in a particular time interval
 divdistr_int<-function(x,table=sptab, ids=F){#here x needs to be a vector of length 2 containing the minimum and maximum ages defining the interval
 which(table$min<=max(x))->a
 which(table$min>=min(x))->b
@@ -125,7 +128,7 @@ return(length)}#standard setting ids=F makes it return the number of records
 ##
 ##
 ##function:
-#for counting number of occurrences at a given numerical age. if ab.val==F, counts number of occurrences, otherwise counts number of specimens/individuals via the "abundance_value" collumn
+#Counts number of occurrences overlapping a given numerical age. If ab.val==F, counts number of occurrences, otherwise counts number of specimens/individuals via the "abundance_value" collumn given in pdb data
 abdistr<-function(x,table=xx,ab.val=T){
 which(as.numeric(table$lag)<=x)->a
 which(as.numeric(table$eag)>=x)->b
@@ -143,7 +146,7 @@ return(abundance)}
 ##
 ##
 ##function
-#wrapper around abdistr function for applicability to vectors
+#wrapper around abdistr function for applicability to vectors (analogue of divdistr_() )
 abdistr_<-function(x, table=xx, ab.val=T){
 length(x)->n
 rep(NA,n)->tmp
@@ -159,7 +162,7 @@ return(tmp)
 ##
 ##
 ##function: 
-#Function that will produce a data-frame to use with ggplot for co-opting the geom_violin() function to produce a spindle-diagram of occurrences. Contains a number of repetitions of the taxon name for each age proportional to the number of occurrences or individuals (i.e. abundance proxy) at any given time
+#Produce a data.frame to use with ggplot by co-opting the geom_violin() function to plot spindle-diagrams of occurrences. Contains a number of repetitions of the taxon name for each age proportional to the number of occurrences or individuals (i.e. abundance proxy) at any given time
 ab.gg<-function(data=occ, taxon="taxon_A", agerange=c(252,66), precision_ma=1, ab.val=T){
 ma<-numeric()
 tax<-character()#just empty vectors to append our values to
@@ -180,8 +183,8 @@ return(dd)#this returns the data.frame
 ##
 ##
 ##function: 
-#Function that will produce a data-frame to use with ggplot for co-opting the geom_violin() function to produce a spindle-diagram of species diversity. Contains a number of repetitions of the taxon name for each age proportional to the number of occurrences or individuals (i.e. abundance proxy) at any given time
-div.gg<-function(data=occ, taxa="", agerange=c(252,66), precision_ma=1){#occ needs to be a list()-object with mk.sptab-output for relevant subtaxa saved as occ$taxonname_sptab)
+#Produce a data-frame to use with ggplot by co-opting the geom_violin() function to plot spindle-diagrams of species diversity. Contains a number of repetitions of the taxon name for each age proportional to the number of species (i.e. diversity proxy) at any given time.
+div.gg<-function(data=occ, taxa="", agerange=c(252,66), precision_ma=1){#occ needs to be a list()-object with mk.sptab-output for relevant subtaxa saved as occ$sptab_taxonname)
 ma<-numeric()
 tax<-character()#empty vectors to append to
 agerange<-seq(max(agerange),min(agerange),-precision_ma)#make a sequence out of agerange based on precision
@@ -199,3 +202,13 @@ return(dd)
 }
 ####
 ####
+
+#example workflow on how to plot simple paleobiodiversity graphs:
+if(1==2){#just to prevent this being automatically executed ;)
+occ<-list()
+pdb("Eurypterida")->occ$Eurypterida
+mk.sptab(occ$Eurypterida)->occ$sptab_Eurypterida
+curve(divdistr_(x,occ$sptab_Eurypterida), xlim=c(500,250)) #produces a simple graph of raw species diversity – do note that there tend to be many repeat entries due to "alternate" spellings in pdb data, so you might need to manually clean up your sptab if you want more reliable absolute figures (relative figures and trends should be less affected)
+div.gg(data=occ, taxa=c("Eurypterida"), agerange=c(500,250))->occ$divgg
+ggplot2::ggplot(data=occ$divgg)+ggplot2::xlim(500,250)+ggplot2::geom_violin(ggplot2::aes(x=ma, y=tax, fill=tax), col="white", scale="count", adjust=0.5)+deeptime::coord_geo()
+}
