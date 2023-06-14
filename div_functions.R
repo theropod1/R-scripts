@@ -209,6 +209,7 @@ occ<-list()
 pdb("Eurypterida")->occ$Eurypterida
 mk.sptab(occ$Eurypterida)->occ$sptab_Eurypterida
 curve(divdistr_(x,occ$sptab_Eurypterida), xlim=c(500,250)) #produces a simple graph of raw species diversity – do note that there tend to be many repeat entries due to "alternate" spellings in pdb data, so you might need to manually clean up your sptab if you want more reliable absolute figures (relative figures and trends should be less affected)
+palaeoverse::axis_geo()
 div.gg(data=occ, taxa=c("Eurypterida"), agerange=c(500,250))->occ$divgg
-ggplot2::ggplot(data=occ$divgg)+ggplot2::xlim(500,250)+ggplot2::geom_violin(ggplot2::aes(x=ma, y=tax, fill=tax), col="white", scale="count", adjust=0.5)+deeptime::coord_geo()
+ggplot2::ggplot(data=occ$divgg)+ggplot2::xlim(500,250)+ggplot2::geom_violin(ggplot2::aes(x=ma, y=tax, fill=tax), col="white", scale="count", adjust=0.5)+deeptime::coord_geo()#produces a spindle diagram of diversity
 }
