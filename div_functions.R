@@ -166,7 +166,7 @@ return(tmp)
 ab.gg<-function(data=occ, taxon="taxon_A", agerange=c(252,66), precision_ma=1, ab.val=T){
 ma<-numeric()
 tax<-character()#just empty vectors to append our values to
-agerange<-seq(min(agerange),max(agerange),-precision_ma)#this just makes a sequence from the given age interval
+agerange<-seq(min(agerange),max(agerange),precision_ma)#this just makes a sequence from the given age interval
 
 abdistr_(agerange, table=data, ab.val=ab.val)->abundance#this computes the abundance for the agerange
 
