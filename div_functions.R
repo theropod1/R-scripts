@@ -28,6 +28,42 @@ return(occ)
 ###
 
 
+###
+###
+##function
+pdb.diff<-function(x,subtract){
+
+if(is.data.frame(subtract)){
+x[-which(x$occurrence_no %in% subtract$occurrence_no),]
+}else{
+x[-which(x$occurrence_no %in% subtract),]
+}
+
+}
+###
+###
+
+
+###
+###
+##function
+pdb.union<-function(x){
+
+for(i in 1:nrow(x)){
+
+which(x$occurrence_no == x$occurrence_no[i])->tmp
+
+if(length(tmp)>1){
+x[-tmp[2:length(tmp)],]->x
+}
+
+}
+return(x)
+}
+###
+###
+
+
 ##
 ##
 ##function: 
@@ -68,7 +104,32 @@ sptab$tax<-rep(tax,n)
 return(sptab)
 }
 ####
-#### 
+####
+
+
+
+##
+##
+##function: 
+#make "species table" from occurrence records (output of pdb), with earliest (eag) and latest (lag) occurrence dates for each unique factor value of tna (taxon name). Output is a data.frame containing the species and their respective stratigraphic range (based on their occurrence records)
+mk.taxtab<-function(taxa, earliest, latest, tax="taxon_name"){
+sptab<-levels(factor(taxa))
+n<-length(sptab)
+
+xx<-data.frame(tna=taxa, lag=as.numeric(latest), eag=as.numeric(earliest))
+
+sptab<-data.frame(tna=sptab, max=rep(NA,n), min=rep(NA,n))#make table with age ranges for all species
+
+for(i in 1:n){
+sptab$max[i]<-max(xx$eag[xx$tna==sptab$tna[i]])
+sptab$min[i]<-min(xx$lag[xx$tna==sptab$tna[i]])
+}
+(sptab$min+sptab$max)/2->sptab$ma
+sptab$tax<-rep(tax,n)
+return(sptab)
+}
+####
+####
 
 
 ##
@@ -124,12 +185,36 @@ return(length)}#standard setting ids=F makes it return the number of records
 ####
 
 
+##
+##
+##function:
+#cleans up the tna$-collumn of ocurrence data and removes common character combinations leading to duplicates
+occ.cleanup<-function(x){
+if(is.data.frame(x)){
+length(levels(factor(x$tna)))->lev
+stringr::str_replace_all(x$tna, c("n. gen. "="","cf. "=""," $"="", "^ "="", "n. sp. "="","[[:punct:]]"="", "  "=" "))->out
+}else{
+length(levels(factor(x))->lev)
+stringr::str_replace_all(x, c("n. gen. "="","cf. "=""," $"="", "^ "="", "n. sp. "="","[[:punct:]]"="", "  "=" "))->out
+}
+
+print(paste(lev, "factor levels reduced down to", length(levels(factor(out)))))
+return(out)
+
+}
+
 
 ##
 ##
 ##function:
 #Counts number of occurrences overlapping a given numerical age. If ab.val==F, counts number of occurrences, otherwise counts number of specimens/individuals via the "abundance_value" collumn given in pdb data
 abdistr<-function(x,table=xx,ab.val=T){
+
+if(length(is.na(table$abund_value))==0){
+table$abund_value<-1
+}else{
+table$abund_value[which(is.na(table$abund_value))]<-1}
+
 which(as.numeric(table$lag)<=x)->a
 which(as.numeric(table$eag)>=x)->b
 intersect(a,b)->id
@@ -163,16 +248,45 @@ return(tmp)
 ##
 ##function: 
 #Produce a data.frame to use with ggplot by co-opting the geom_violin() function to plot spindle-diagrams of occurrences. Contains a number of repetitions of the taxon name for each age proportional to the number of occurrences or individuals (i.e. abundance proxy) at any given time
-ab.gg<-function(data=occ, taxon="taxon_A", agerange=c(252,66), precision_ma=1, ab.val=T){
+ab.gg<-function(data=occ, taxa="taxon_A", agerange=c(252,66), precision_ma=1, ab.val=T){
 ma<-numeric()
 tax<-character()#just empty vectors to append our values to
 agerange<-seq(min(agerange),max(agerange),precision_ma)#this just makes a sequence from the given age interval
 
-abdistr_(agerange, table=data, ab.val=ab.val)->abundance#this computes the abundance for the agerange
+###for individual species
+if(is.data.frame(data) & taxa =="SPP"){
+levels(factor(data$tna))->lev
+for(i in 1:length(lev)){
+
+st<-data[data$tna==lev[i],]#get the table for each species and save it as st.
+
+
+###
+abdistr_(agerange, table=st, ab.val=ab.val)->abundance#this computes the abundance for the agerange
 
 ma<-c(ma,c(rep(agerange, abundance)))#this repeats each value in the age range as often as there are occurrences or specimens from that time
 
-tax<-c(tax,rep(taxon, sum(abundance)))#this simply repeats the name of the taxon as often as there are specimens
+tax<-c(tax,rep(lev[i], sum(abundance)))#this simply repeats the name of the species as often as there are specimens
+}
+}else{
+###
+for(i in 1:length(taxa)){
+if(is.data.frame(data)){st<-data}else if(is.list(data) & taxa !="SPP"){
+st<-eval(parse(text=paste0("occ$",taxa[i])))#get the value of each taxon and save it as st.
+}else{stop("data must be a data.frame() or a list()-object containing data.frames")}
+
+###
+
+
+abdistr_(agerange, table=st, ab.val=ab.val)->abundance#this computes the abundance for the agerange
+
+ma<-c(ma,c(rep(agerange, abundance)))#this repeats each value in the age range as often as there are occurrences or specimens from that time
+
+tax<-c(tax,rep(taxa[i], sum(abundance)))#this simply repeats the name of the taxon as often as there are specimens
+}}
+
+
+
 data.frame(ma=ma, tax=tax)->dd#this puts both collumns we just made together into one data.frame
 return(dd)#this returns the data.frame
 }
@@ -185,6 +299,7 @@ return(dd)#this returns the data.frame
 ##function: 
 #Produce a data-frame to use with ggplot by co-opting the geom_violin() function to plot spindle-diagrams of species diversity. Contains a number of repetitions of the taxon name for each age proportional to the number of species (i.e. diversity proxy) at any given time.
 div.gg<-function(data=occ, taxa="", agerange=c(252,66), precision_ma=1){#occ needs to be a list()-object with mk.sptab-output for relevant subtaxa saved as occ$sptab_taxonname)
+occ<-data
 ma<-numeric()
 tax<-character()#empty vectors to append to
 agerange<-seq(max(agerange),min(agerange),-precision_ma)#make a sequence out of agerange based on precision
