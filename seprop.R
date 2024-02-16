@@ -27,16 +27,8 @@ return(margins)
 
 
 
-#same thing, different syntax:
-naprox<-function(prop,n,sig.level=0.05,CI=T, percent=F){
 
-if(CI==F){return(sqrt(prop*(1-prop)/n))#return only standard error
-
-}else{
-prop+qnorm(1-sig.level/2)*sqrt(prop*(1-prop)/n)*c(-1,1)->res
-
-names(res)<-c(paste0("p_",sig.level/2),paste0("p_",1-sig.level/2))
-
-return(res)}#return confidence interval
-
-}
+##function:
+#calculate standard error for a continuous variable
+se<-function(x){sd(x)/sqrt(length(x))}
+##
