@@ -11,3 +11,8 @@ if(is.numeric(x)==T){#tests that input is numeric
 }
 
 ##
+
+##function:
+#calculate standard error
+se<-function(x){sd(x)/sqrt(length(x))}
+##
