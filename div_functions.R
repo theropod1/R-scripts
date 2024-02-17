@@ -194,7 +194,7 @@ if(is.data.frame(x)){
 length(levels(factor(x$tna)))->lev
 stringr::str_replace_all(x$tna, c("n. gen. "="","cf. "=""," $"="", "^ "="", "n. sp. "="","[[:punct:]]"="", "  "=" "))->out
 }else{
-length(levels(factor(x))->lev)
+length(levels(factor(x)))->lev
 stringr::str_replace_all(x, c("n. gen. "="","cf. "=""," $"="", "^ "="", "n. sp. "="","[[:punct:]]"="", "  "=" "))->out
 }
 
@@ -328,3 +328,25 @@ palaeoverse::axis_geo()
 div.gg(data=occ, taxa=c("Eurypterida"), agerange=c(500,250))->occ$divgg
 ggplot2::ggplot(data=occ$divgg)+ggplot2::xlim(500,250)+ggplot2::geom_violin(ggplot2::aes(x=ma, y=tax, fill=tax), col="white", scale="count", adjust=0.5)+deeptime::coord_geo()#produces a spindle diagram of diversity
 }
+
+##function:
+#converts a species table into a form suitable for plotting on a calibrated phylogeny (e.g. in ape) using the viol() function. Requires either a calibrated tree (will be needed for plotting anyway) or its root.time.
+convert.sptab<-function(sptab,tree=NULL,root.time=NULL){
+if(is.null(root.time)){
+tree$root.time->root.time
+}
+
+which(sptab$max>root.time)->drop
+if(length(drop)>0){
+sptab[-drop]->sptab}
+sptab->sptab_
+
+sptab_$max<-abs(sptab$min-root.time)
+print(sptab$max)
+
+sptab_$min<-abs(sptab$max-root.time)
+
+
+return(sptab_)
+}
+##
