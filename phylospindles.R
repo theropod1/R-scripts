@@ -1,9 +1,13 @@
 ##function
 #automatically plot a calibrated phylogeny with "diversity spindles" based on several sptab_<Taxon_name>, contained in a list()-object (parameter occ). Scale needs to be adjusted manually using dscale parameter.
 
-phylo.spindles<-function(tree0, occ, ages=NULL, xlimits=c(300,0), col=add.alpha("black"), fill=col,lwd=1,dscale=0.002,res=1, cex.txt=1,col.txt=add.alpha(col,1), axis=T, labels=T, txt.y=-0.4,txt.x=150){
+phylo.spindles<-function(tree0, occ, ages=NULL, xlimits=c(300,0), col=add.alpha("black"), fill=col,lwd=1,dscale=0.002,res=1, cex.txt=1,col.txt=add.alpha(col,1), axis=T, labels=T, txt.y=-0.4,txt.x=150, add=FALSE,tbmar=0.2){
 
-ape::plot.phylo(tree0,x.lim=-1*(xlimits-tree0$root.time),align.tip.label=2, label.offset=50,show.tip.label=F, y.lim=c(0.8,length(tree0$tip.label)+0.2))->tmp1
+if(add==FALSE){
+ape::plot.phylo(tree0,x.lim=-1*(xlimits-tree0$root.time),align.tip.label=2, label.offset=50,show.tip.label=F, y.lim=c(1-tbmar,length(tree0$tip.label)+tbmar))->tmp1
+}else(
+tmp1<-get("last_plot.phylo", envir = .PlotPhyloEnv)
+)
 
 col->col_
 fill->fill_
@@ -38,7 +42,7 @@ text(x=1-(txt.x-tree0$root.time),y=i,adj=c(0,txt.y), tree0$tip.label[i], cex=cex
 }#end loop
 
 
-if(axis==T){#add axis
+if(axis==T){#add time axis
 ticks<-seq(round(min(c(max(xlimits),tree0$root.time))/10)*10,round(min(xlimits)/10)*10,-25)
 
 axis(1,at=1-(ticks-tree0$root.time), lab=ticks)}
