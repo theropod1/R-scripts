@@ -3,7 +3,7 @@
 redraw.phylo<-function(saved_plot=NULL,col="black",lwd=1,lty=1,lend=2,arrow.l=0, arrow.angle=45, arrow.code=2, indices=NULL){
 #load data
 if(is.null(saved_plot)){
-lastPP <- get("last_plot.phylo", envir = .PlotPhyloEnv)
+lastPP <- get("last_plot.phylo", envir = ape::.PlotPhyloEnv)
 }else(lastPP<-saved_plot)
 
 if(!is.null(indices)){

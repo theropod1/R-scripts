@@ -6,7 +6,7 @@ phylo.spindles<-function(tree0, occ, ages=NULL, xlimits=c(300,0), col=add.alpha(
 if(add==FALSE){
 ape::plot.phylo(tree0,x.lim=-1*(xlimits-tree0$root.time),align.tip.label=2, label.offset=50,show.tip.label=F, y.lim=c(1-tbmar,length(tree0$tip.label)+tbmar))->tmp1
 }else(
-tmp1<-get("last_plot.phylo", envir = .PlotPhyloEnv)
+tmp1<-get("last_plot.phylo", envir = ape::.PlotPhyloEnv)
 )
 
 col->col_
