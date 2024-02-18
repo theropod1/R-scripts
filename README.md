@@ -20,7 +20,7 @@ modelp.R #p value for lm
 div_functions.R #various functions for downloading, analyzing and visualizing paleobiodiversity-related data from paleobiodb– see file for details
 phylospindles.R #plotting function for plotting phylogeny (requires ape) with the addition of "diversity spindles" based on diversity data compiled using functinalities from div_functions.R. Requires viol.R  for violin plots.
 redraw_phylo.R #redraw the branches of a phylogenetic tree, or a subset of those branches, over a existing plot
-
+tsperiods.R #add a geological timescale to the lower margin of a plot.
 proc_dist.R #calculate procrustes distances based on aligned procrustes coordinates in morphometric analysis
 
 ###miscellaneous and plotting
