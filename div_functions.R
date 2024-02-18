@@ -342,11 +342,13 @@ sptab[-drop]->sptab}
 sptab->sptab_
 
 sptab_$max<-abs(sptab$min-root.time)
-print(sptab$max)
-
 sptab_$min<-abs(sptab$max-root.time)
 
 
 return(sptab_)
 }
 ##
+
+##also related
+source("viol.R") #allows plotting of customizeable violin plots in base graphics
+source("phylospindles.R") #function for plotting phylogenies with added diversity spindles
