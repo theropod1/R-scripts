@@ -67,6 +67,37 @@ axis(1,at=1-(ticks-tree0$root.time), lab=ticks)}
 }
 ##
 
+##example workflow for phylo.spindles()
+if(1==2){#just to prevent execution
+#load all needed functions
+source("div_functions.R")
+source("phylospindles.R")
+source("addalpha.R")
+source("viol.R")
+source("tsperiods.R")
+
+library(ape)
+library(strap)
+
+ape::read.tree(text="((Stegosauria,Ankylosauria),(Ornithopoda,(Ceratopsia,Pachycephalosauria)));")->tree0#load a phylogeny of ornithischian dinosaurs using ape’s read.tree function
+#manually create a matrix that will be used for time-calibrating the tree:
+ages<-cbind(FAD=c(170,170,165,160,130),LAD=c(120,66,66,66,66))
+rownames(ages)<-tree0$tip.label
+#not time-calibrate using strap
+strap::DatePhylo(tree0, ages, rlen = 2, method = "equal", add.terminal = FALSE)->tree0
+
+#download pdb occurrence records and automatically convert to species range tables:
+occ<-pdb.autodiv(tree0) #this takes either a character vector or an object of class "phylo" as input. Additional taxa can be manually downloaded and appended to this list(), or a preexisting object used as long as it has names matching the naming scheme needed for the phylo.spindles() function (that is, species tables named "sptab_taxonname1" etc.)
+
+##now plot the tree, including diversity spindles
+phylo.spindles(tree0,occ=occ,col=add.alpha("black"),ages=ages,txt.y=.5, dscale=0.005,xlim=c(260,0))
+ts.periods(tree0, names=F, ylim=c(0,.7),alpha=0.6)#optionally add a colour-coded period-level timescale using the function from tscol.R
+
+#Spindles can also be added manually,e.g. overlying other spindles, using the viol()-function, if desired:
+viol(x=c(0:260),stat=divdistr_, pos=3, table=convert.sptab(occ$sptab_Ornithopoda,tree0),dscale=0.005, cutoff=tsconv(c(165,66),tree0),fill=add.alpha("red"),col=add.alpha("red"))
+#note the use of tsconv() here to convert between geological ages and the x axis scale to which the calibrated phylogeny is plotted by ape, which starts at 0 at the base of the phylogeny
+}
+
 
 ##function
 #Convert between geological timescales and the scale to which a tree is plotted by ape::plot.phylo() (the latter is inverted and starts at 0 at the base of the tree.
