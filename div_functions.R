@@ -151,11 +151,11 @@ return(length)
 ##
 ##function
 #wrapper around divdistr function; generalized function for applicability to vectors (i.e. several values of x, can be used to graph species diversity through time, e.g. with curve(divdistr_(x,sptab) or with ggplot2)
-divdistr_<-function(x, table=sptab){
+divdistr_<-function(x, table=sptab,w=rep(1,length(x))){
 length(x)->n
 rep(NA,n)->tmp
 for(i in 1:n){
-divdistr(x[i], table=table)->tmp[i]
+divdistr(x[i], table=table)*w[i]->tmp[i]
 }
 return(tmp)
 }
@@ -329,6 +329,42 @@ div.gg(data=occ, taxa=c("Eurypterida"), agerange=c(500,250))->occ$divgg
 ggplot2::ggplot(data=occ$divgg)+ggplot2::xlim(500,250)+ggplot2::geom_violin(ggplot2::aes(x=ma, y=tax, fill=tax), col="white", scale="count", adjust=0.5)+deeptime::coord_geo()#produces a spindle diagram of diversity
 }
 
+
+##function
+#Automatically download pdb occurrence data and return a list object including species range tables, for use with divdistr_() and functions based on it for graphing diversity.
+pdb.autodiv<-function(taxa,cleanup=TRUE,interval=NULL){
+occ<-list()
+if(class(taxa)=="phylo"){
+tree0$tip.label->treetips}else{
+taxa->treetips}
+
+#download and cleanup
+for(i in 1:length(treetips)){
+
+if(is.null(interval)){
+pdb(treetips[i])->occ[[i]]
+}else{
+pdb(treetips[i],interval=interval)->occ[[i]]
+}
+
+
+if(cleanup==TRUE){
+occ.cleanup(occ[[i]])->occ[[i]]$tna}
+}
+names(occ)<-treetips
+
+#build species tables
+for(i in 1:length(treetips)){
+mk.sptab(eval(parse(text=paste0("occ$",treetips[i]))))->occ[[length(treetips)+i]]
+}
+names(occ)<-c(treetips,paste0("sptab_", treetips))
+
+return(occ)
+}
+##
+
+
+
 ##function:
 #converts a species table into a form suitable for plotting on a calibrated phylogeny (e.g. in ape) using the viol() function. Requires either a calibrated tree (will be needed for plotting anyway) or its root.time.
 convert.sptab<-function(sptab,tree=NULL,root.time=NULL){
@@ -350,5 +386,5 @@ return(sptab_)
 ##
 
 ##also related
-source("viol.R") #allows plotting of customizeable violin plots in base graphics
-source("phylospindles.R") #function for plotting phylogenies with added diversity spindles
+#source("viol.R") #allows plotting of customizeable violin plots in base graphics
+#source("phylospindles.R") #function for plotting phylogenies with added diversity spindles
