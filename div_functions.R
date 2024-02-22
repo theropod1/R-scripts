@@ -31,14 +31,16 @@ return(occ)
 ###
 ###
 ##function
+#subtract one occurrence dataset from another by excluding any occurrence_no found in both. Useful for analyzing stem-lineage diversity, e.g. pdb.diff(mammaliaformes,subtract=mammalia)->stem_mammaliaforms
 pdb.diff<-function(x,subtract){
 
 if(is.data.frame(subtract)){
-x[-which(x$occurrence_no %in% subtract$occurrence_no),]
+drop<-which(x$occurrence_no %in% subtract$occurrence_no)
 }else{
-x[-which(x$occurrence_no %in% subtract),]
+drop<-which(x$occurrence_no %in% subtract)
 }
-
+if(length(drop>0)){
+x[-drop,]}else{x}
 }
 ###
 ###
@@ -47,6 +49,7 @@ x[-which(x$occurrence_no %in% subtract),]
 ###
 ###
 ##function
+#generate a union of two occurrence dataset, making sure that each occurrence_no is only represented once. Useful to complete a dataset if a pdb search term fails to capture all the desired taxa due to categorization or phylogeny, e.g. pdb.union(rbind(pdb("Sauropodomorpha"),pdb("Sauropoda")))->Sauropodomorpha, because currently the pdb seems to only return non-sauropod sauropodomorphs if "Sauropodomorpha" alone is used
 pdb.union<-function(x){
 
 for(i in 1:nrow(x)){
@@ -67,7 +70,7 @@ return(x)
 ##
 ##
 ##function: 
-#select subtaxa of rank="rank" from a csv table downloaded via pdb() with option full=T
+#select subtaxa of rank="rank" from a csv table downloaded via pdb() with option full=T, where rank parameter must be the valid name of a collumn in the occurrence dataset (e.g. "class"). Returns the indices of the rows containing the data in question, for easy filterig of the dataframes
 stax.sel<-function(data,taxa, rank="class"){
 tmp<-numeric()
 
@@ -85,7 +88,7 @@ return(tmp)
 ##
 ##
 ##function: 
-#make "species table" from occurrence records (output of pdb), with earliest (eag) and latest (lag) occurrence dates for each unique factor value of tna (taxon name). Output is a data.frame containing the species and their respective stratigraphic range (based on their occurrence records)
+#make a "species table" from occurrence records (output of pdb), with earliest (eag) and latest (lag) occurrence dates for each unique factor value of tna (taxon name). Output is a data.frame containing the species and their respective stratigraphic range (based on their occurrence records)
 mk.sptab<-function(xx,tax="taxon_name"){
 sptab<-levels(factor(xx$tna))
 n<-length(sptab)
@@ -111,7 +114,7 @@ return(sptab)
 ##
 ##
 ##function: 
-#make "species table" from occurrence records (output of pdb), with earliest (eag) and latest (lag) occurrence dates for each unique factor value of tna (taxon name). Output is a data.frame containing the species and their respective stratigraphic range (based on their occurrence records)
+#generalization of the "species table" from occurrence records for any taxonomic level, provided as an input character vector under parameter "taxa" (e.g. use the genus collumn from the pdb()-output), with the respective earliest and latest time interval for each occurrence given via the parameters "earliest" and "latest".. Output is a data.frame containing the taxa and their respective stratigraphic ranges (based on their occurrence records)
 mk.taxtab<-function(taxa, earliest, latest, tax="taxon_name"){
 sptab<-levels(factor(taxa))
 n<-length(sptab)
