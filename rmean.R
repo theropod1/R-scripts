@@ -8,7 +8,7 @@ i-(round(width/2)-1)->lwr
 i+(round(width/2)-1)->upr
 
 j<-seq(lwr,upr,1)
-x_[i]<-mean(x[j])
+x_[i]<-mean(x[j],na.rm=T)
 }
 
 return(x_)
@@ -37,10 +37,10 @@ if(weighting==TRUE){
 
 weights<-abs(as.numeric(x0[indices]-x_[i]))
 
-y_[i]<-weighted.mean(y0[indices],w=plusminus+weightdiff-weights)
+y_[i]<-weighted.mean(y0[indices],w=plusminus+weightdiff-weights,na.rm=T)
 
 }else{
-y_[i]<-mean(y0[indices])}
+y_[i]<-mean(y0[indices],na.rm=T)}
 }
 
 return(y_)
