@@ -16,25 +16,33 @@ return(x_)
 ##
 
 
+
 ##function: 
-#rolling mean function that takes means for a vector x based on the values in a second vector, var. All values within the distance of parameter plusminus are taken into account. If weighting==TRUE, the values are weighted based on a linear interpolation based on the distance in var.
+#rolling mean function that takes a rolling mean for a vector y0 based on the values in a second vector, x0, for either every entry in x0 and y0, or every entry for x1, if provided. All values within the distance of parameter plusminus are taken into account. If weighting==TRUE, the values are weighted based on a linear interpolation based on the distance in x.
 
-rmeana<-function(x, var, plusminus=5, weighting=FALSE,weightdiff=0){
-x_<-rep(NA,length(x))
+rmeana<-function(x0, y0, x1=NULL, plusminus=5, weighting=FALSE,weightdiff=0){
 
-for(i in 1:length(x)){
+if(is.null(x1)){
+x_<-x0
+}else{
+x_<-x1}
 
-indices<-which(abs(as.numeric(var-var[i]))<=plusminus)
+y_<-rep(NA,length(x_))
+
+for(i in 1:length(x_)){
+
+indices<-which(abs(as.numeric(x0-x_[i]))<=plusminus)
 
 if(weighting==TRUE){
-weights<-abs(as.numeric(var[indices]-var[i]))
 
-x_[i]<-weighted.mean(x[indices],w=plusminus+weightdiff-weights)
+weights<-abs(as.numeric(x0[indices]-x_[i]))
+
+y_[i]<-weighted.mean(y0[indices],w=plusminus+weightdiff-weights)
 
 }else{
-x_[i]<-mean(x[indices])}
+y_[i]<-mean(y0[indices])}
 }
 
-return(x_)
+return(y_)
 }
 ##

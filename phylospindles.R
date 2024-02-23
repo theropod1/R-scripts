@@ -1,7 +1,7 @@
 ##function
-#automatically plot a calibrated phylogeny with "diversity spindles" based on several sptab_<Taxon_name>, contained in a list()-object (parameter occ). Scale needs to be adjusted manually using dscale parameter.
+#automatically plot a calibrated phylogeny with "diversity spindles" based on several sptab_<Taxon_name>, contained in a list()-object (parameter occ). Scale needs to be adjusted manually using dscale parameter. Diversity estimates can be weighted by providint a vector of weights. Spindles can be smoothed by applying a rolling mean (within ± a value, in ma, given via the smooth-parameter), if desired.
 
-phylo.spindles<-function(phylo0, occ, ages=NULL, xlimits=c(300,0), col=add.alpha("black"), fill=col,lwd=1,dscale=0.002,res=1, cex.txt=1,col.txt=add.alpha(col,1), axis=T, labels=T, txt.y=-0.4,txt.x=150, add=FALSE,tbmar=0.2,weights=1){
+phylo.spindles<-function(phylo0, occ, ages=NULL, xlimits=c(300,0), col=add.alpha("black"), fill=col,lwd=1,dscale=0.002,res=1, cex.txt=1,col.txt=add.alpha(col,1), axis=T, labels=T, txt.y=-0.4,txt.x=150, add=FALSE,tbmar=0.2,weights=1,smooth=0){
 
 if(add==FALSE){
 ape::plot.phylo(phylo0,x.lim=-1*(xlimits-phylo0$root.time),align.tip.label=2, label.offset=50,show.tip.label=F, y.lim=c(1-tbmar,length(phylo0$tip.label)+tbmar))->tmp1
@@ -60,7 +60,7 @@ w<-weights
 if(length(w)!=length(seq(tmp1$x.lim[1],tmp1$x.lim[2],res))){stop("weights vector must have the same length as time interval/resolution")}
 
 #plot spindles
-viol(seq(tmp1$x.lim[1],tmp1$x.lim[2],res),pos=i, stat=divdistr_, table=convert.sptab(eval(parse(text=paste0("occ$sptab_",phylo0$tip.label[i]))), phylo0), dscale=dscale, col=col, fill=fill, lwd=1,cutoff=cutoff,w=w)
+viol(seq(tmp1$x.lim[1],tmp1$x.lim[2],res),pos=i, stat=divdistr_, table=convert.sptab(eval(parse(text=paste0("occ$sptab_",phylo0$tip.label[i]))), phylo0),smooth=smooth, dscale=dscale, col=col, fill=fill, lwd=1,cutoff=cutoff,w=w)
 
 if(labels==T){#add labels
 
@@ -88,6 +88,7 @@ axis(1,at=1-(ticks-phylo0$root.time), lab=ticks)}
 ##example workflow for phylo.spindles()
 if(1==2){#just to prevent execution
 #load all needed functions
+source("rmean.R")
 source("div_functions.R")
 source("phylospindles.R")
 source("addalpha.R")

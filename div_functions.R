@@ -154,12 +154,14 @@ return(length)
 ##
 ##function
 #wrapper around divdistr function; generalized function for applicability to vectors (i.e. several values of x, can be used to graph species diversity through time, e.g. with curve(divdistr_(x,sptab) or with ggplot2)
-divdistr_<-function(x, table=sptab,w=rep(1,length(x))){
+divdistr_<-function(x, table=sptab,w=rep(1,length(x)),smooth=0){
 length(x)->n
 rep(NA,n)->tmp
 for(i in 1:n){
 divdistr(x[i], table=table)*w[i]->tmp[i]
 }
+
+if(smooth>0){tmp<-rmeana(y0=tmp,x0=x, plusminus=smooth)}
 return(tmp)
 }
 ####
