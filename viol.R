@@ -9,7 +9,7 @@ x2[order(x)]->x2
 x[order(x)]->x
 
 #calculate plotting statistic. defaults to density, but other functions can be used by altering the stat parameter
-if(is.numeric(stat)){#if stat a vector 
+if(is.numeric(stat)){#if stat is a vector 
 if(length(stat)==length(x)){
 stat->d}else{stop("If stat is numeric(), it has to be the same length as x")}
 }else{#if stat is a function

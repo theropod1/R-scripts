@@ -1,5 +1,5 @@
 ##function
-#automatically plot a calibrated phylogeny with "diversity spindles" based on several sptab_<Taxon_name>, contained in a list()-object (parameter occ). Scale needs to be adjusted manually using dscale parameter. Diversity estimates can be weighted by providint a vector of weights. Spindles can be smoothed by applying a rolling mean (within ± a value, in ma, given via the smooth-parameter), if desired.
+#automatically plot a calibrated phylogeny with "diversity spindles" based on several sptab_<Taxon_name>, contained in a list()-object (parameter occ). Scale needs to be adjusted manually using dscale parameter. Diversity estimates can be weighted by providing a vector of weights. Spindles can be smoothed by applying a rolling mean (within ± a value, in ma, given via the smooth-parameter), if desired.
 
 phylo.spindles<-function(phylo0, occ, ages=NULL, xlimits=c(300,0), res=1, weights=1, dscale=0.002, col=add.alpha("black"), fill=col,lwd=1, cex.txt=1,col.txt=add.alpha(col,1), axis=T, labels=T, txt.y=-0.4,txt.x=150, add=FALSE,tbmar=0.2,smooth=0){
 
@@ -65,13 +65,13 @@ w<-weights
 if(length(w)!=length(seq(tmp1$x.lim[1],tmp1$x.lim[2],res))){stop("weights vector must have the same length as time interval/resolution")}
 
 
-if(is.list(occ)){
+if(!is.matrix(occ) & !is.data.frame(occ)){
 #plot spindles
 viol(seq(tmp1$x.lim[1],tmp1$x.lim[2],res),pos=i, stat=divdistr_, table=convert.sptab(eval(parse(text=paste0("occ$sptab_",phylo0$tip.label[i]))), phylo0),smooth=smooth, dscale=dscale, col=col, fill=fill, lwd=1,cutoff=cutoff,w=w)
 }else if(is.matrix(occ) | is.data.frame(occ)){#if instead of a list object, a dataframe is given giving x and diversity values to plot (can also be co-opted to plot any other values, e.g. disparity
 
-if(phylo$tip.label[i] %in% colnames(occ)){
-viol(occ[,x], pos=i, stat=occ[,phylo$tip.label[i]], smooth=smooth, dscale=dscale, col=col, fill=fill, lwd=1, cutoff=cutoff, w=w)
+if(phylo0$tip.label[i] %in% colnames(occ)){
+viol(occ[,"x"], pos=i, stat=occ[,phylo0$tip.label[i]], smooth=smooth, dscale=dscale, col=col, fill=fill, lwd=1, cutoff=cutoff, w=w)
 }
 
 }
@@ -80,7 +80,7 @@ viol(occ[,x], pos=i, stat=occ[,phylo$tip.label[i]], smooth=smooth, dscale=dscale
 
 if(labels==T){#add labels
 
-if(length(txt.x)==length(phylo0$tip.label)){#if a vector of x values for labels is provided
+if(length(txt.x)>1){#if a vector of x values for labels is provided
     if(length(which(names(txt.x)==phylo0$tip.label[i]))==1){
     which(names(txt.x)==phylo0$tip.label[i])->j
     text(x=1-(txt.x[j]-phylo0$root.time),y=i,adj=c(0,txt.y), phylo0$tip.label[i], cex=cex.txt,col=col.txt)
