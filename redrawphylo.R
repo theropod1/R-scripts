@@ -8,6 +8,9 @@ lastPP <- get("last_plot.phylo", envir = ape::.PlotPhyloEnv)
 
 if(!is.null(indices)){
 lastPP$edge[indices,]->lastPP$edge
+
+if(length(indices==1)){rbind(lastPP$edge,c(NA,NA))->lastPP$edge}#retain data.frame format if only one index given
+
 }
 #now loop through edges
 for(i in 1:nrow(lastPP$edge)){

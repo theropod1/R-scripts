@@ -1,7 +1,7 @@
 ##function: 
 #manually plot a violin plot for data x at position pos. ... are options to be passed on to density(). Cutoff gives values at which to cut off the tails of the distribution, either as a range (if length(cutoff)>1) or as a z score. Dscale needs to be adjusted manually to fit the desired plot. ... gives additional options to be passed on to density, or (if overridden) any other plotting function, after its first option. x is the x values at which plotting is to take place, unless the function supplied for stat (e.g. density) already outputs a data.frame with its own x values alongside the d values
 
-viol<-function(x, pos, x2=NULL, stat=density, dscale=1, cutoff=range(x), horiz=T, add=T, fill="grey", col="black", lwd=1,...){
+viol<-function(x, pos, x2=NULL, stat=density, dscale=1, cutoff=range(x), horiz=TRUE, add=T, fill="grey", col="black", lwd=1, lty=1,...){
 #sort ascending
 if(!is.null(x2) & is.numeric(x2)){
 x2[order(x)]->x2
@@ -40,21 +40,21 @@ xstat[!is.na(dstat0)]->xstat
 ##plotting
 if(add==T){#add to an existing plot
 if(horiz==T){#plot horizontally
-polygon(y=c(pos+dstat,rev(pos-dstat)),x=c(xstat,rev(xstat)), border=col, col=fill, lwd=lwd)
+polygon(y=c(pos+dstat,rev(pos-dstat)),x=c(xstat,rev(xstat)), border=col, col=fill, lwd=lwd,lty=lty)
 }else(#plot vertically
-polygon(x=c(pos+dstat,rev(pos-dstat)),y=c(xstat,rev(xstat)), border=col, col=fill, lwd=lwd)
+polygon(x=c(pos+dstat,rev(pos-dstat)),y=c(xstat,rev(xstat)), border=col, col=fill, lwd=lwd,lty=lty)
 )
 
 }else{#create a new plot
 if(horiz==T){
 plot(density(x), xlim=range(xstat), ylim=c(pos+max(dstat), pos-max(dstat)), type="n")
 
-polygon(y=c(pos+dstat,rev(pos-dstat)),x=c(xstat,rev(xstat)), border=col, col=fill, lwd=lwd, ylab="Density", xlab="Value")
+polygon(y=c(pos+dstat,rev(pos-dstat)),x=c(xstat,rev(xstat)), border=col, col=fill, lwd=lwd,lty=lty, ylab="Density", xlab="Value")
 
 }else{
 plot(density(x), ylim=range(xstat), xlim=c(pos+max(dstat), pos-max(dstat)), type="n", xlab="Density", ylab="Value")
 
-polygon(x=c(pos+dstat,rev(pos-dstat)),y=c(xstat,rev(xstat)), border=col, col=fill, lwd=lwd)
+polygon(x=c(pos+dstat,rev(pos-dstat)),y=c(xstat,rev(xstat)), border=col, col=fill, lwd=lwd,lty=lty)
 }
 }
 

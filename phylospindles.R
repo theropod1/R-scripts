@@ -3,8 +3,10 @@
 
 phylo.spindles<-function(phylo0, occ, ages=NULL, xlimits=c(300,0), res=1, weights=1, dscale=0.002, col=add.alpha("black"), fill=col,lwd=1, cex.txt=1,col.txt=add.alpha(col,1), axis=T, labels=T, txt.y=-0.4,txt.x=150, add=FALSE,tbmar=0.2,smooth=0){
 
+if(length(tbmar)==1){tbmar<-rep(tbmar,2)}#if only one value is given for tbmar, duplicate it. Otherwise, first value is bottom, second top
+
 if(add==FALSE){
-ape::plot.phylo(phylo0,x.lim=-1*(xlimits-phylo0$root.time),align.tip.label=2, label.offset=50,show.tip.label=F, y.lim=c(1-tbmar,length(phylo0$tip.label)+tbmar))->tmp1
+ape::plot.phylo(phylo0,x.lim=-1*(xlimits-phylo0$root.time),align.tip.label=2, label.offset=50,show.tip.label=F, y.lim=c(1-tbmar[1],length(phylo0$tip.label)+tbmar[2]))->tmp1
 }else(
 tmp1<-get("last_plot.phylo", envir = ape::.PlotPhyloEnv)
 )
@@ -136,6 +138,6 @@ viol(x=c(0:260),stat=divdistr_, pos=3, table=convert.sptab(occ$sptab_Ornithopoda
 
 ##function
 #Convert between geological timescales and the scale to which a tree is plotted by ape::plot.phylo() (the latter is inverted and starts at 0 at the base of the tree.
-tsconv<-function(x,phylo0){
--1*(x-phylo0$root.time)
+tsconv<-function(x,phylo0,root.time=phylo0$root.time){
+-1*(x-root.time)
 }

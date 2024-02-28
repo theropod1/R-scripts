@@ -1,45 +1,78 @@
 ##
 ##
 ##function: 
+#make a "species table" from occurrence records (output of pdb), with earliest (eag) and latest (lag) occurrence dates for each unique factor value of tna (taxon name). Output is a data.frame containing the species and their respective stratigraphic range (based on their occurrence records)
+mk.sptab<-function(xx,tax="taxon_name"){
+sptab<-levels(factor(xx$tna))
+n<-length(sptab)
+
+xx$lag<-as.numeric(xx$lag)
+xx$eag<-as.numeric(xx$eag)
+
+sptab<-data.frame(tna=sptab, max=rep(NA,n), min=rep(NA,n))#make table with age ranges for all species
+
+for(i in 1:n){
+sptab$max[i]<-max(xx$eag[xx$tna==sptab$tna[i]])
+sptab$min[i]<-min(xx$lag[xx$tna==sptab$tna[i]])
+}
+(sptab$min+sptab$max)/2->sptab$ma
+sptab$tax<-rep(tax,n)
+return(sptab)
+}
+####
+####
+
+########################################################starting here
+
+##
+##
+##function: 
 #download data from paleobiodb (might take a long time for very large taxa, esp. if full=T)
-pdb<-function(taxon="", interval="all", full=FALSE){
+pdb<-function(taxon="", interval="all", what="occs", full=F){
+
+base<-"https://paleobiodb.org/data1.2/"
 
 if(full==TRUE){
 
     if(interval=="all"){
-    pbdb_url <-paste0("https://paleobiodb.org/data1.2/occs/list.csv?base_name=",taxon,"&show=full")
+    pbdb_url <-paste0(base,what,"/list.csv?base_name=",taxon,"&show=full")
     }else{
-    pbdb_url <-paste0("https://paleobiodb.org/data1.2/occs/list.csv?base_name=",taxon,"&interval=",interval,"&show=full")}
+    pbdb_url <-paste0(base,what,"/list.csv?base_name=",taxon,"&interval=",interval,"&show=full")}
 }else{
     if(interval=="all"){
-    pbdb_url <-paste0("https://paleobiodb.org/data1.2/occs/list.csv?base_name=",taxon)
+    pbdb_url <-paste0(base,what,"/list.csv?base_name=",taxon)
     }else{
-    pbdb_url <-paste0("https://paleobiodb.org/data1.2/occs/list.csv?base_name=",taxon,"&interval=",interval)}
+    pbdb_url <-paste0(base,what,"/list.csv?base_name=",taxon,"&interval=",interval)}
     }
-
 occ<-read.csv(pbdb_url)
-occ$hltax<-taxon
-occ$identified_name->occ$tna#for colname compatibility with paleobiodb package
-occ$min_ma->occ$lag#for colname compatibility with paleobiodb package
-occ$max_ma->occ$eag#for colname compatibility with paleobiodb package
+
+    if(what=="occs"){
+occ$identified_name->occ$tna#for colname compatibility with deprecated paleobiodb package
+}
+
+occ$hltax<-taxon#higher level taxon for categorization,e.g. if tables are combined via rbind
+occ$min_ma->occ$lag#for colname compatibility with deprecated paleobiodb package
+occ$max_ma->occ$eag#for colname compatibility with deprecated paleobiodb package
+
 return(occ)
 }
 ###
-###
+
 
 
 ###
 ###
 ##function
 #subtract one occurrence dataset from another by excluding any occurrence_no found in both. Useful for analyzing stem-lineage diversity, e.g. pdb.diff(mammaliaformes,subtract=mammalia)->stem_mammaliaforms
-pdb.diff<-function(x,subtract){
+pdb.diff<-function(x,subtract,id_col=x$occurrence_no){
 
 if(is.data.frame(subtract)){
-drop<-which(x$occurrence_no %in% subtract$occurrence_no)
+drop<-which(id_col %in% subtract$occurrence_no)
 }else{
-drop<-which(x$occurrence_no %in% subtract)
+drop<-which(id_col %in% subtract)
 }
 if(length(drop>0)){
+print(paste0("Dropping ", length(drop),"rows from occurrence data frame"))
 x[-drop,]}else{x}
 }
 ###
@@ -66,6 +99,24 @@ return(x)
 ###
 ###
 
+##
+##
+##function:
+#cleans up the tna$-collumn of ocurrence data and removes common character combinations leading to duplicates
+occ.cleanup<-function(x){
+if(is.data.frame(x)){
+length(levels(factor(x$tna)))->lev
+stringr::str_replace_all(x$tna, c("n. gen. "="","cf. "=""," $"="", "^ "="", "n. sp. "="","[[:punct:]]"="", "  "=" "))->out
+}else{
+length(levels(factor(x)))->lev
+stringr::str_replace_all(x, c("n. gen. "="","cf. "=""," $"="", "^ "="", "n. sp. "="","[[:punct:]]"="", "  "=" "))->out
+}
+
+print(paste(lev, "factor levels reduced down to", length(levels(factor(out)))))
+return(out)
+
+}
+
 
 ##
 ##
@@ -83,45 +134,17 @@ return(tmp)
 ###
 ###
 
-
-
 ##
 ##
-##function: 
-#make a "species table" from occurrence records (output of pdb), with earliest (eag) and latest (lag) occurrence dates for each unique factor value of tna (taxon name). Output is a data.frame containing the species and their respective stratigraphic range (based on their occurrence records)
-mk.sptab<-function(xx,tax="taxon_name"){
-sptab<-levels(factor(xx$tna))
-n<-length(sptab)
-
-xx$lag<-as.numeric(xx$lag)
-xx$eag<-as.numeric(xx$eag)
-
-sptab<-data.frame(tna=sptab, max=rep(NA,n), min=rep(NA,n))#make table with age ranges for all species
-
-for(i in 1:n){
-sptab$max[i]<-max(xx$eag[xx$tna==sptab$tna[i]])
-sptab$min[i]<-min(xx$lag[xx$tna==sptab$tna[i]])
-}
-(sptab$min+sptab$max)/2->sptab$ma
-sptab$tax<-rep(tax,n)
-return(sptab)
-}
-####
-####
-
-
-
-##
-##
-##function: 
+##function: XXX –––––– update
 #generalization of the "species table" from occurrence records for any taxonomic level, provided as an input character vector under parameter "taxa" (e.g. use the genus collumn from the pdb()-output), with the respective earliest and latest time interval for each occurrence given via the parameters "earliest" and "latest".. Output is a data.frame containing the taxa and their respective stratigraphic ranges (based on their occurrence records)
-mk.taxtab<-function(taxa, earliest, latest, tax="taxon_name"){
+mk.sptab<-function(xx=NULL,taxa=xx$tna, earliest=xx$eag, latest=xx$lag, tax=NULL){
 sptab<-levels(factor(taxa))
 n<-length(sptab)
 
 xx<-data.frame(tna=taxa, lag=as.numeric(latest), eag=as.numeric(earliest))
 
-sptab<-data.frame(tna=sptab, max=rep(NA,n), min=rep(NA,n))#make table with age ranges for all species
+sptab<-data.frame(tna=sptab, max=rep(NA,n), min=rep(NA,n))#make table with age ranges for all species (or other taxa)
 
 for(i in 1:n){
 sptab$max[i]<-max(xx$eag[xx$tna==sptab$tna[i]])
@@ -134,27 +157,20 @@ return(sptab)
 ####
 ####
 
+##
+##
+##function
+#This function counts the number of species in a "species table" (output of mk.sptab) at points in time x. Can be applied to vectors and for graphing, e.g. using curve(divdistr_(x,sptab) or with ggplot2)
+divdistr_<-function(x, table,w=rep(1,length(x)),smooth=0){
 
-##
-##
-##function:
-#This function counts the number of species in a "species table" (output of mk.sptab) at a given point in time x
-divdistr<-function(x,table=sptab){
+    divdistr<-function(x,table){
 which(table$min<=x)->a
 which(table$max>=x)->b
 intersect(a,b)->id
 length(id)->length
 return(length)
-}
-####
-####
+    }
 
-
-##
-##
-##function
-#wrapper around divdistr function; generalized function for applicability to vectors (i.e. several values of x, can be used to graph species diversity through time, e.g. with curve(divdistr_(x,sptab) or with ggplot2)
-divdistr_<-function(x, table=sptab,w=rep(1,length(x)),smooth=0){
 length(x)->n
 rep(NA,n)->tmp
 for(i in 1:n){
@@ -178,56 +194,15 @@ which(table$min>=min(x))->b
 which(table$max<=max(x))->c
 which(table$max>=min(x))->d
 
-intersect(a,b)->id1#this intersection contains those entries that have a minimum smaller than the maximum but larger than the minimum
-intersect(c,d)->id2#this intersection contains those entries that have a maximum smaller than the maximum but larger than the minimum
+intersect(a,b)->id1#intersection contains those entries that have a minimum smaller than the maximum but larger than the minimum
+intersect(c,d)->id2#intersection contains those entries that have a maximum smaller than the maximum but larger than the minimum
 
-union(id1,id2)->id#this is the union of both intersections, giving all taxa that have any temporal overlap with the selected interval
+union(id1,id2)->id#union of both intersections, giving all taxa that have any temporal overlap with the selected interval
+
 length(id)->length
-if(ids==T){return(id)} else{
-return(length)}#standard setting ids=F makes it return the number of records
-}
-####
-####
-
-
-##
-##
-##function:
-#cleans up the tna$-collumn of ocurrence data and removes common character combinations leading to duplicates
-occ.cleanup<-function(x){
-if(is.data.frame(x)){
-length(levels(factor(x$tna)))->lev
-stringr::str_replace_all(x$tna, c("n. gen. "="","cf. "=""," $"="", "^ "="", "n. sp. "="","[[:punct:]]"="", "  "=" "))->out
+if(ids==T){return(id)#setting ids=T returns ids of records overlapping interval
 }else{
-length(levels(factor(x)))->lev
-stringr::str_replace_all(x, c("n. gen. "="","cf. "=""," $"="", "^ "="", "n. sp. "="","[[:punct:]]"="", "  "=" "))->out
-}
-
-print(paste(lev, "factor levels reduced down to", length(levels(factor(out)))))
-return(out)
-
-}
-
-
-##
-##
-##function:
-#Counts number of occurrences overlapping a given numerical age. If ab.val==F, counts number of occurrences, otherwise counts number of specimens/individuals via the "abundance_value" collumn given in pdb data
-abdistr<-function(x,table=xx,ab.val=T){
-
-if(length(is.na(table$abund_value))==0){
-table$abund_value<-1
-}else{
-table$abund_value[which(is.na(table$abund_value))]<-1}
-
-which(as.numeric(table$lag)<=x)->a
-which(as.numeric(table$eag)>=x)->b
-intersect(a,b)->id
-length(id)->n
-sum(table$abund_value[id], na.rm=T)->abundance
-if(ab.val==F){
-return(n)} else{
-return(abundance)}
+return(length)}#standard setting ids=F returns number of records
 }
 ####
 ####
@@ -236,8 +211,33 @@ return(abundance)}
 ##
 ##
 ##function
-#wrapper around abdistr function for applicability to vectors (analogue of divdistr_() )
+#Counts number of occurrences overlapping a given numerical age. If ab.val==F, counts number of occurrences, otherwise counts number of specimens/individuals via the "abundance_value" collumn given in pdb data
 abdistr_<-function(x, table=xx, ab.val=T){
+
+    abdistr<-function(x,table=xx,ab.val=T){
+
+    if(ab.val==TRUE){#set abundance values to 1 if NULL or NA
+if(sum(!is.na(table$abund_value))==0 | is.null(table$abund_value)){#if all are NA or collumn doesn’t exist
+table$abund_value<-1
+print("no abund_value found, proceeding without it")
+}else if(sum(is.na(table$abund_value))==0){#if none are NA
+table$abund_value<-as.numeric(table$abund_value)
+}else{#if there are some NAs, replace them with 1
+table$abund_value[which(is.na(table$abund_value))]<-1 
+}}
+
+which(as.numeric(table$lag)<=x)->a
+which(as.numeric(table$eag)>=x)->b
+intersect(a,b)->id
+
+if(ab.val==F){
+length(id)->n
+return(n)
+}else{
+sum(table$abund_value[id], na.rm=T)->abundance
+return(abundance)}
+}
+
 length(x)->n
 rep(NA,n)->tmp
 for(i in 1:n){
@@ -247,12 +247,25 @@ return(tmp)
 }
 ####
 ####
+#example:
+if(1==2){
+pdb("Stegosauria",what="colls")->stecoll
+pdb("Stegosauria",full=T)->stego
+pdb("Stegosauria")->stego_
 
+curve(abdistr_(x,stego,ab.val=T), xlim=c(200,100),ylim=c(-80,1300), main="Number of Stegosaur fossils",ylab="number of fossils/occurrences",xlab="geological age (ma)")
+curve(abdistr_(x,stego,ab.val=F), xlim=c(200,100),lty=2,add=T)#number of occurrences
+curve(abdistr_(x,stecoll,ab.val=F)*5, xlim=c(200,100),lty=3,lwd=2,col="red",add=T)#number of collections
+axis(4, at=seq(0,1200,200), lab=seq(0,1200,200)*5,col="red",col.axis="red")
+mtext(side=4,line=-1,"number of collections",col="red")
+ts.stages(ylim=c(-110,-20),alpha=0.3,border=add.alpha("grey"))
+ts.periods(ylim=c(-110,-20),alpha=0.0)
+}
 
 ##
 ##
 ##function: 
-#Produce a data.frame to use with ggplot by co-opting the geom_violin() function to plot spindle-diagrams of occurrences. Contains a number of repetitions of the taxon name for each age proportional to the number of occurrences or individuals (i.e. abundance proxy) at any given time
+#Produce a data.frame to use with ggplot by co-opting the geom_violin() function to plot spindle-diagrams of occurrences. Contains a number of repetitions of the taxon name for each age proportional to the number of occurrences or specimens (i.e. abundance proxy) at any given time.
 ab.gg<-function(data=occ, taxa="taxon_A", agerange=c(252,66), precision_ma=1, ab.val=T){
 ma<-numeric()
 tax<-character()#just empty vectors to append our values to
@@ -360,11 +373,48 @@ names(occ)<-treetips
 
 #build species tables
 for(i in 1:length(treetips)){
-mk.sptab(eval(parse(text=paste0("occ$",treetips[i]))))->occ[[length(treetips)+i]]
+mk.sptab(eval(parse(text=paste0("occ$",treetips[i]))),tax=treetips[i])->occ[[length(treetips)+i]]
 }
 names(occ)<-c(treetips,paste0("sptab_", treetips))
 
 return(occ)
+}
+##
+
+
+##function:
+#Automatically build calibration matrix for strap::DatePhylo() and phylo.spindles() from the paleobiology database (paleobiodb.org). Ages will probably contain incorrect or questionable information, and should be checked manually for correctness, but can form a starting point or timesaver for time-calibrating phylogenies. Source is either a list()-object containing occurrence records for the taxa in question (as downloaded using pdb() or pdb.autodiv()), or, if left empty, direct download from the paleobiology database.
+tree.ages<-function(phylo0, data=NULL, taxa=phylo0$tip.label){
+FAD<-numeric(length(taxa))
+LAD<-numeric(length(taxa))
+
+if(is.null(data)){#if no list() object given, look up data on the paleobiology database server
+for(i in 1:length(taxa)){
+pdb(taxa[i])[,c("eag","lag")]->data_
+#find and save minimum and maximum recorded taxon ages
+max(data_)->FAD[i]
+min(data_)->LAD[i]
+
+}}else{#if list object is given, try to find taxa there
+for(i in 1:length(taxa)){
+
+data[[paste0("sptab_",taxa[i])]][,c("max","min")]->data_#first see if there are species tables
+if(is.null(data_)){#if species tables were not found, look for occurrence tables
+data[[taxa[i]]][,c("eag","lag")]->data_
+}
+#find and save minimum and maximum recorded taxon ages
+max(data_)->FAD[i]
+min(data_)->LAD[i]
+
+}
+}
+
+#build matrix, then return
+cbind(FAD, LAD)->ages
+colnames(ages)<-c("FAD", "LAD")
+rownames(ages)<-taxa
+
+return(ages)
 }
 ##
 
@@ -374,6 +424,7 @@ return(occ)
 #converts a species table into a form suitable for plotting on a calibrated phylogeny (e.g. in ape) using the viol() function. Requires either a calibrated tree (will be needed for plotting anyway) or its root.time.
 convert.sptab<-function(sptab,tree=NULL,root.time=NULL){
 if(is.null(root.time)){
+if(is.null(tree)){stop("either tree or root.time must be provided")}
 tree$root.time->root.time
 }
 
@@ -384,6 +435,7 @@ sptab->sptab_
 
 sptab_$max<-abs(sptab$min-root.time)
 sptab_$min<-abs(sptab$max-root.time)
+sptab_$ma<-abs(sptab$max-root.time)
 
 
 return(sptab_)
