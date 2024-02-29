@@ -200,6 +200,8 @@ return(y_)
 #' @param stat The plotting statistic. Details to the density() function, as in a standard violin plot, but can be overridden with another function that can take x or x2 as its first argument. Stat can also be a numeric vector of the same length as x, in which case the values in this vectors are used instead of the function output and plotted against x as an independent variable.
 #' @param dscale The scale to apply to the values for density (or another plotting statistic). Defaults to 1, but adjustment may be needed depending on the scale of the plot the violin is to be added to.
 #' @param cutoff Setting for cropping the violin. Can be either a single value, in which case the input is interpreted as number of standard deviations from the mean, or a numeric vector of length 2, giving the lower and upper cutoff value directly.
+#' @param xlab x axis label
+#' @param ylab y axis label
 #' @param horiz Logical indicating whether to plot horizontally (defaults to TRUE) or vertically
 #' @param add Logical indicating whether to add to an existing plot (defaults to TRUE) or generate a new plot.
 #' @param lim Limits (in the dimensions of x) used for plotting, if add==FALSE. Defaults to cutoff, but can be manually set as a numeric vector of length 2, giving the lower and upper limits of the plot.
