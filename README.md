@@ -13,7 +13,8 @@ geomean.R #geometric mean
 modelp.R #p value for lm
 
 ###paleontology
-paleoDiv.R # Source code of the upcoming paleoDiv package. Includes content of previous files div_functions.R, viol.R, addalpha.R, darken.R, tsperiods.R, rmeans.R and phylospindles.R in one file useful for graphing biodiversity and abundance patterns in relation to time and phylogeny, accompanied by various utility functions.
+paleoDiv.R # Source code of the paleoDiv package. Includes content of previous files div_functions.R, viol.R, addalpha.R, darken.R, tsperiods.R, rmeans.R and phylospindles.R in one file. useful for graphing biodiversity and abundance patterns in relation to time and phylogeny, accompanied by various utility functions. See package for details.
+gdi.r # Source code of the gdi package. Functions for calculating volume, rotational inertia and second moment of area for various shapes. See package for details.
 proc_dist.R #calculate procrustes distances based on aligned procrustes coordinates in morphometric analysis
 
 ###miscellaneous and plotting
