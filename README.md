@@ -20,3 +20,4 @@ proc_dist.R #calculate procrustes distances based on aligned procrustes coordina
 cos.int.R #cosine interpolation
 export.R #function to export current plot window in various sizes
 ci.lm.R #shortcut for plotting linear model with confidence/prediction interval
+datamatch.r #match two sets of data of different length and/or order based on a common identifier variable
