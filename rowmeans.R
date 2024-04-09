@@ -7,7 +7,7 @@ vectors<-cbind(...)
 out<-numeric()
 for(i in 1:nrow(vectors)){
 
-vectors[i,]->inp
+as.numeric(vectors[i,])->inp
 
 out<-c(out, fun(inp, na.rm=T))
 

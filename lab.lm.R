@@ -58,15 +58,26 @@ adj<-c(0,1)
 
 if(is.null(transformation)){
 bquote(y == .(signif(coef(lm)[1],digits)) + .(signif(coef(lm)[2],digits)) * x)->eq
-}else if(transformation=="log" | transformation=="LOG"){
-bquote(y == .(signif(exp(coef(lm)[1]),digits))*x^.(signif(coef(lm)[2],digits)))->eq
-}else if(transformation=="log10" | transformation=="LOG10"){
-bquote(y == .(signif(10^(coef(lm)[1]),digits))*x^.(signif(coef(lm)[2],digits)))->eq
-}
 bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
 
+}else if(transformation=="log" | transformation=="LOG"){
+bquote(y == .(signif(exp(coef(lm)[1]),digits))*x^.(signif(coef(lm)[2],digits)))->eq
+bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
+
+}else if(transformation=="log10" | transformation=="LOG10"){
+bquote(y == .(signif(10^(coef(lm)[1]),digits))*x^.(signif(coef(lm)[2],digits)))->eq
+bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
+
+}
+
 if(exists("modelp")){
-bquote(p == .(signif(modelp(lm),digits)))->mp}
+modelp(lm)->pval
+if(is.numeric(pval)){
+bquote(p == .(signif(pval,digits)))->mp}else{
+bquote(p == .(pval,digits))->mp
+}
+
+}
 
 
 text(x=xtxt,y=ytxt, adj=adj, eq,...)
