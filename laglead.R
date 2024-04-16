@@ -20,23 +20,26 @@ dat<-data.frame(x=x, y=y)
 for(r in c(1:len)){
 shifts[r]->i
 
-x<-rep(NA,length(dat$x))
-y<-rep(NA,length(dat$x))
+x<-rep(NA,length(dat$x)+abs(i))
+y<-rep(NA,length(dat$x)+abs(i))
 
-##STABLE only works for evenly spaced AND ordered time series
+##STABLE only for evenly spaced AND ordered time series
 if(is.null(ordinate)){if(i>0){
 
-message("shift=",i,">0, appending NAs to front of temperature, i.e. CO2 lags temperature")
+message("shift=",i,">0, appending NAs to front of y, i.e. x lags y")
 
 for(j in 1:length(dat$x)){
 x[j]<-dat$x[j]
-y[j]<-c(rep(NA,abs(i)),dat$y)[j]
+#y[j]<-c(rep(NA,abs(i)),dat$y)[j]
+y[j+abs(i)]<-c(dat$y)[j]
+
 }
 }else if(i<0){
-message("shift=",i,"<0, appending NAs to front of CO2, i.e. CO2 leads temperature")
+message("shift=",i,"<0, appending NAs to front of x, i.e. x leads y")
 
 for(j in 1:length(dat$x)){
-x[j]<-c(rep(NA,abs(i)),dat$x)[j]
+#x[j]<-c(rep(NA,abs(i)),dat$x)[j]
+x[j+abs(i)]<-c(dat$x)[j]
 y[j]<-dat$y[j]
 }
 }else{
@@ -59,6 +62,7 @@ y[which(ordinate==ordinate[j]+i)]<-dat$y[j]
 x_<-x
 y_<-y
 
+if(length(shifts)>1){
 x<-x[!is.na(y)]
 y<-y[!is.na(y)]
 
@@ -72,12 +76,12 @@ spearmans[r] <- as.numeric(cor.test(x, y, method = 'spearman')$estimate)
 pearsons[r,] <- c(as.numeric(cor.test(x, y, method = 'pearson')$estimate),as.numeric(cor.test(x, y, method = 'pearson')$conf.int))
 
 is[r]<-i
-
+}
 }#end loop through i and r
+if(length(shifts)>1){
+data.frame(shift=is, pearsons_point=pearsons[,1], pearsons_lwr=pearsons[,2],pearsons_upr=pearsons[,3], spearmans, kendalls)->outdf}
 
-data.frame(shift=is, pearsons_point=pearsons[,1], pearsons_lwr=pearsons[,2],pearsons_upr=pearsons[,3], spearmans, kendalls)->outdf
-
-if(plot==TRUE){
+if(plot==TRUE & length(shifts)>1){
 
 if(par("mfrow")[2]<3){
 par(mfrow=c(1,3))}
@@ -121,8 +125,10 @@ text(mean(c(par("usr")[2],0)),par("usr")[3]+diff(range(par("usr")[3:4]))/40,adj=
 
 }
 
-return(outdf)
+if(length(shifts)==1){
+data.frame(x_, y_)->outdf}
 
+return(outdf)
 }
 #to do: expand to be able to take into account irregularly spaced sequences of x values
 #e.g. x[dat$x==x+i]<-dat$y or similar

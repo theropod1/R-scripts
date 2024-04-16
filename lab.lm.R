@@ -28,13 +28,22 @@
 
 
 lab.lm<-function(lm, at="topleft", adj=c(0,1), digits=4, transformation=NULL,spacing=1.5, pvalue=FALSE,...){
-if(is.numeric(at)){
-xtxt<-at[1]
-ytxt<-at[2]
-}else{
 par("usr")->bb
 diff(range(bb[1:2]))/50->xu
 diff(range(bb[3:4]))/50->yu
+
+
+if(is.numeric(at)){
+if(length(at)>1){
+xtxt<-at[1]
+ytxt<-at[2]
+
+}else if(length(at)==1){
+xtxt<-bb[1]+xu
+ytxt<-at
+}
+
+}else{
 
 if(at=="topright"){
 xtxt<-bb[2]-xu
@@ -78,7 +87,7 @@ bquote(p == .(pval,digits))->mp
 }
 
 }
-
+message("inserting label at x = ", xtxt, ", y = ",ytxt)
 
 text(x=xtxt,y=ytxt, adj=adj, eq,...)
 if(pvalue==TRUE & exists("mp")){
