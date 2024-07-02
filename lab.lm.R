@@ -66,7 +66,22 @@ adj<-c(0,1)
 }
 
 if(is.null(transformation)){
+
+if(length(coef(lm))==2){
 bquote(y == .(signif(coef(lm)[1],digits)) + .(signif(coef(lm)[2],digits)) * x)->eq
+}else{
+
+bquote(y == .(signif(coef(lm)[1],digits)) + .(signif(coef(lm)[2],digits)) * x[1])->eq
+
+if(length(coef(lm))>2){##run accross all coefficients
+for(i in 3:length(coef(lm))){
+ind<-i-1
+
+bquote(.(eq)+.(signif(coef(lm)[i],digits)) * x[.(ind)])->eq
+}
+}
+}
+
 bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
 
 }else if(transformation=="log" | transformation=="LOG"){

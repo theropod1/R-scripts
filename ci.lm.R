@@ -33,7 +33,7 @@
 #' #add log-transformed model:
 #' ci.lm(m1,alpha=0.5,lty=1,col="red",lwd=2,limits=c(1.5,4.5),lt.border=2,border="red")
 #' #add log-transformed model:
-#'ci.lm(m2,alpha=0.5,transformation="log",lty=1,col="blue",lwd=2,limits=c(1.5,4.5),lt.border=2,border="blue")´
+#'ci.lm(m2,alpha=0.5,transformation="log",lty=1,col="blue",lwd=2,limits=c(1.5,4.5),lt.border=2,border="blue")
 
 
 ci.lm<-function(lm,varname=NULL, plotvar=NULL, predvar=NULL, transformation=NULL, limits=NULL, col="black",fill=col,border=NA,alpha=0.5,interval="confidence",level=0.9,lt.border=2,lw.border=1,subdivisions=200,type=as.numeric,...){
@@ -132,6 +132,11 @@ preds[,3]->upr
 
 #throw out NA values
 keep<-which(!is.na(point) & !is.na(lwr) & !is.na(upr))
+if(!is.null(limits)){
+if(is.numeric(limits) & length(limits)>1){
+keep<-which(!is.na(point) & !is.na(lwr) & !is.na(upr) & x>=min(limits) & x<=max(limits))
+}
+}
 point[keep]->point
 lwr[keep]->lwr
 upr[keep]->upr
