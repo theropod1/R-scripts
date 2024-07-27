@@ -72,3 +72,20 @@ for(i in 1:ncol(x)){var(x[,i])->vars[i]}
 return(sum(vars))
 }
 ##
+
+##function distr.sample()
+#' resample datapoints based on a distribution given by previously known data
+#' param n number of points to sample
+#' param data data to inform the density distribution
+#' param n.density number of points for density to return and to then sample from
+#' param ... additional arguments to pass on to density()
+#' return a numeric vector with n points drawn from the simulated population based on the input data
+#' details note that the x values output by density() are used as the sample to be drawn from, so the precision depends on the setting for n in density(), a higher n will result in a greater number of discrete points to sample from, approximating a continuous distribution
+
+distr.sample<-function(n,data,n.density=2000,...){
+density(data, n=n.density,...)->ddat
+
+sample(x=ddat$x, size=n, replace=T, prob=ddat$y)
+
+}
+##
