@@ -14,9 +14,11 @@
 #' @param lty vector of line types
 #' @param xlim x limits (data limits used if NULL)
 #' @param ylim y limits (data limits used if NULL)
+#' @param spaces character string in group to replace with spaces for labels, if not NULL
 #' @param dscale density scaling factors (numeric) to apply to individual violins
 #' @param add logical whether to add to existing plot (default: FALSE)
 #' @param ax whether to plot axes
+#' @param srt angle for categorical axis text rotation
 
 #' @param ... other arguments to pass on to paleoDiv::viol() and plot()
 #' @export violins
@@ -25,7 +27,7 @@
 #' data.frame(p=rnorm(50), cat=rep(c("A","B","B","B","B"),10))->d
 #' violins(p~cat,d)
 
-violins<-function(x, data=NULL, group=NULL, horiz=FALSE, order=NULL, xlab="", ylab="", col="black",fill="grey", lwd=1, lty=1,dscale=1,xlim=NULL, ylim=NULL,add=FALSE, ax=TRUE,...){
+violins<-function(x, data=NULL, group=NULL, horiz=FALSE, order=NULL, xlab="", ylab="", col="black",fill="grey", lwd=1, lty=1,dscale=1,xlim=NULL, ylim=NULL, spaces="_", add=FALSE, ax=TRUE,srt=45,...){
 if(inherits(x,"formula")){
 
 if(x[1]!=`~`()) stop("no ~ operator found in formula supplied to x")
@@ -41,6 +43,10 @@ x_->x
 }
 #print(data.frame(x=x,group=group))
 
+}
+
+if(!is.null(spaces)){
+gsub(spaces," ", group)->group
 }
 
 
@@ -84,8 +90,8 @@ paleoDiv::viol(x=x[group==cat[i]], pos=i, horiz=TRUE, fill=fill[i], col=col[i], 
 
 if(ax){
 axis(1)
-#axis(2,at=c(1:ncat), lwd=0, lab=NA)
-mtext(side=2, at=c(1:ncat), text=cat, col=col)
+#mtext(side=2, at=c(1:ncat), text=cat, col=col)
+text(x=par("usr")[1]-plotr("x")*0.015,xpd=T, srt=srt, adj=c(1,0), y=c(1:ncat), col=col, cat)
 
 }
 
@@ -93,11 +99,16 @@ mtext(side=2, at=c(1:ncat), text=cat, col=col)
 for(i in 1:ncat){#loop
 paleoDiv::viol(x=x[group==cat[i]], pos=i, horiz=FALSE, fill=fill[i], col=col[i], lwd=lwd[i], lty=lty[i],dscale=dscale[i],...)
 }#end loop
+
 if(ax){
 axis(2)
-mtext(side=1, at=c(1:ncat), text=cat, col=col)
 
-}}
+#mtext(side=1, at=c(1:ncat), text=cat, col=col)
+text(y=par("usr")[3]-plotr("y")*0.015,xpd=T, srt=srt, adj=c(1,0), x=c(1:ncat), col=col, cat)
+
+}
+
+}
 
 
 out<-1:ncat

@@ -12,8 +12,10 @@
 #' @param pch vector of symbols
 #' @param xlim x limits (data limits used if NULL)
 #' @param ylim y limits (data limits used if NULL)
+#' @param spaces character string in group to replace with spaces for labels, if not NULL
 #' @param width standard deviation for jitter
 #' @param ax whether to plot axes
+#' @param srt angle for categorical axis text rotation
 #' @param add logical whether to add to existing plot (default: TRUE)
 #' @param ... other arguments to pass on to jitterp() and plot()
 #' @importFrom graphics axis
@@ -23,7 +25,7 @@
 #' data.frame(p=rnorm(50), cat=rep(c("A","B","B","B","B"),10))->d
 #' multijitter(p~cat,d, add=FALSE)
 
-multijitter<-function(x, data=NULL, group=NULL, horiz=FALSE, order=NULL, xlab="", ylab="", col="black", pch=16, width=0.1, xlim=NULL, ylim=NULL,add=TRUE,ax=FALSE,...){
+multijitter<-function(x, data=NULL, group=NULL, horiz=FALSE, order=NULL, xlab="", ylab="", col="black", pch=16, spaces="_", width=0.1, xlim=NULL, ylim=NULL,add=TRUE,ax=FALSE,srt=45,...){
 if(inherits(x,"formula")){
 
 if(x[1]!=`~`()) stop("no ~ operator found in formula supplied to x")
@@ -41,6 +43,10 @@ x_->x
 
 }
 
+
+if(!is.null(spaces)){
+gsub(spaces," ", group)->group
+}
 
 ##xrange and number of categories
 range(x)->rx
@@ -78,8 +84,11 @@ jitterp(x=x[group==cat[i]], y=i, width=width, col=col[i], pch=pch[i],...)->out[[
 
 }#end loop
 
-if(ax==TRUE){
+if(ax){
 axis(1)
+#mtext(side=2, at=c(1:ncat), text=cat, col=col)
+text(x=par("usr")[1]-plotr("x")*0.015,xpd=T, srt=srt, adj=c(1,0), y=c(1:ncat), col=col, cat)
+
 }
 
 }else{#vertical viols
@@ -91,8 +100,12 @@ jitterp(y=x[group==cat[i]], x=i, width=width, col=col[i], pch=pch[i],...)->out[[
 
 }#end loop
 
-if(ax==TRUE){
+if(ax){
 axis(2)
+
+#mtext(side=1, at=c(1:ncat), text=cat, col=col)
+text(y=par("usr")[3]-plotr("y")*0.015,xpd=T, srt=srt, adj=c(1,0), x=c(1:ncat), col=col, cat)
+
 }
 
 }
