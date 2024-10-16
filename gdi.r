@@ -29,7 +29,7 @@ sellipse <- function(a, b, k) {
 #'
 #' @param k superellipse exponent.
 #' @param res the desired resolution
-#' @return a data frame containing 
+#' @return a data frame containing x and y coordinates for the outline of the (super)ellipse
 #' @export sellipse.coo
 #' @examples
 #' sellipse.coo(2.0)->df #get coordinates for normal ellipse (exponent k=2)
@@ -337,7 +337,7 @@ return(depthscenters)
 #' @param k Superellipse exponent to be used for the cross-sectional area. Defaults to 2.0 (normal ellipse).
 #' @param corr Correction factor for area of cross-sections, calculated as the ratio between the actual cross-sectional area and that of a (super)ellipse (depending on the specified exponent k) with the same diameters. This setting enables the function to account for complex, non-elliptical cross-sections. Default value is 1, i.e. no correction. Can be either a single number, or a numeric vector of the same length as lat and dors (in the case of a changing cross-sectional geometry along the length of the body).
 #' @param smooth.ends If method != "raw", specify whether first and last segments should be left raw, or taper to 0 (i.e. be approximated as cones). Only applies if there are no leading or following zeros in the measurement vectors.
-#' @param return Determines whether to report the estimated total volume (if default/"total"), or a data.frame() with segment radii, areas and volumes (if left empty of any other character string.
+#' @param return Determines whether to report the estimated total volume (if default/"total"), or a data.frame() with segment radii, areas and volumes (if left empty of any other character string).
 #' @return Either a single number representing the total volume estimated (with names indicating the horizontal length of the silhouette in the unit determined by scale), or (if return!="total") a data.frame() containing columns with the radii in both dimensions, the estimated elliptical or superelliptical areas, and the segment volumes.
 #' @export gdi
 #' @examples
@@ -657,21 +657,32 @@ return(weighted.mean(y_center, w=masses, na.rm=TRUE)/scale)
 #' Plots a silhouette read by measuresil()
 #'
 #' @param sil A data frame that is the output of measuresil(..., return="all"), containing the center and the diameter of the silhouette at each value for x.
-#' @param flip Whether to flip axes (useful if measuresil() was performed using align="v", defaults to FALSE.
-#' @param add Whether to add to an existing plot
+#' @param flip Logical indicating whether to flip axes (needed if measuresil() was performed using align="v", defaults to FALSE.
+#' @param add Logical indicating whether to add silhoutte to an existing plot (defaults to FALSE)
 #' @param xoffset Optional value by which to shift the silhouette on the x axis
 #' @param yoffset Optional value by which to shift the silhouette on the y axis
+#' @param alpha Opacity value for fill of polygon (defaults to 1)
+#' @param col Fill color of polygon (defaults to "grey")
+#' @param border Border color of polygon (defaults to "darkgrey")
+#' @param scale Scale to use for plotting (given in pixels/unit). Defaults to 1.
+#' @param xlab X axis label to use for plotting (if add=FALSE)
+#' @param ylab Y axis label to use for plotting (if add=FALSE)
 #' @param ... Other parameters to pass on to plot() or lines()
 #' @return A plotted silhouette
 #' @export plot_sil
 #' @importFrom graphics lines
+#' @importFrom graphics axis
+#' @importFrom graphics polygon
+#' @importFrom graphics par
 #' @importFrom graphics plot.default
+#' @importFrom grDevices col2rgb
+#' @importFrom grDevices rgb
 #' @examples
 #' fdir <- system.file(package="gdi")
 #' measuresil(file.path(fdir,"exdata","lat.png"), return="all")->lat_
 #' plot_sil(lat_)
 
-plot_sil<-function(sil, flip=FALSE, add=FALSE, xoffset=0, yoffset=0,...){
+plot_sil<-function(sil, flip=FALSE, add=FALSE, xoffset=0, yoffset=0,alpha=1, col="grey", border="darkgrey", scale=1, xlab="", ylab="",...){
 
 if(flip==FALSE){
 x<-c(1:nrow(sil),rev(1:nrow(sil)))+xoffset
@@ -681,13 +692,26 @@ y<--c(1:nrow(sil),rev(1:nrow(sil)))+nrow(sil)+yoffset
 x<-c(sil$center+sil$diameter/2, rev(sil$center-sil$diameter/2))+xoffset
 }
 
+which(!is.na(y) & !is.na(x))->keep
+x<-x[keep]
+y<-y[keep]
+
+x<-x/scale
+y<-y/scale
+
+aa<-function(col, alpha=0.5){
+  apply(sapply(col, col2rgb)/255,2,function(x){rgb(x[1], x[2], x[3], alpha=alpha)})}
+  
+  if(alpha<1){col<-aa(col,alpha)}
+
 if(add==TRUE){
-lines(y~x, ...)
+polygon(y~x, border=border, col=col,...)
 
 }else{
 
-plot(y~x, type="l", xlab="x",ylab="y",...)
-
+plot(y~x, type="n",axes=FALSE, xlab=xlab, ylab=ylab,...)
+polygon(y~x, col=col, border=border)
+axis(1)
 }
 
 }
@@ -813,7 +837,7 @@ return(total)
 #' @param y An optional vector of vertical (dorsoventral) segment COM positions.
 #' @param dors_diam An optional vector of transverse diameters of the silhouette, required if not contained in x.
 #' @param lat_diam An optional vector of vertical diameters of the silhouette, required if not contained in x. Needed if inertia for "roll" or "pitch" should be calculated.
-#' @param axis_coord An optional coordinate of the axis of rotation, defaults to the center of mass of the entire volume if not set.
+#' @param axis_coord An optional coordinate of the axis of rotation (in original units, i.e. pixels), defaults to the center of mass of the entire volume if not set.
 #' @param axis Axis of rotation, defaults to "yaw" (i.e. rotation around vertical axis), can also be "pitch" (rotation around transverse axis) or "roll" (rotation around horizontal axis). For yaw rotation, the body is assumed to be bilaterally symmetrical, whereas for pitch rotation, dorsoventral variation in COM of segments is taken into account.
 #' @param volumes An optional separate vector of volumes, required if x is not a data.frame containing them.
 #' @param corr An optional correction factor for the cross-sectional shape, given as the ratio between the characteristic mass moment of inertia of a plane with the given shape (e.g. determined by cscorr()) and an elliptical plane with the same diameters and assigned mass. Allows the calculation of moments of inertia for bodies with arbitrary cross-sectional shapes.
