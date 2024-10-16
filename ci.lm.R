@@ -19,7 +19,9 @@
 #' @param type type of input data to be used when converting the independent variable (defaults to as.numeric(), can also for example be as.Date)
 #' @param ... Other named parameters to be passed on to lines()
 #' @return Adds the graph for the model to the active plotting device, including a polygon showing the uncertainty range
+#' @importFrom stats coef
 #' @importFrom stats predict
+#' @importFrom stats qt
 #' @importFrom grDevices dev.cur
 #' @importFrom graphics polygon
 #' @importFrom graphics lines

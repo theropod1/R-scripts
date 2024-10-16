@@ -6,7 +6,7 @@
 #' @param at Positional value (as numeric containing x and y coordinates or character string specifying "topleft","topright","bottomleft" or "bottomright"). Defaults to topleft.
 #' @param adj Text alignment as a numeric of length 2. Defaults to c(0,1) (left top aligned)
 #' @param digits Number of significant digits to which to round parameters of model formula 
-#' @param tranformation Transformation used by model (can be "LOG" or "log" for natural logarithm, "LOG10" or "log10" for base-10-logarithm
+#' @param transformation Transformation used by model (can be "LOG" or "log" for natural logarithm, "LOG10" or "log10" for base-10-logarithm
 #' @param spacing Line spacing to use between first and second line
 #' @param pvalue Logical indicating whether to plot p value of model in second line. If FALSE (default), then multiple R-squared is used.
 #' @param ... Other parameters to be passed on to text()
@@ -96,6 +96,9 @@ bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
 
 if(exists("modelp")){
 modelp(lm)->pval
+if(pval==0){
+pval<-"<2.2×10⁻¹⁶"
+}
 if(is.numeric(pval)){
 bquote(p == .(signif(pval,digits)))->mp}else{
 bquote(p == .(pval,digits))->mp

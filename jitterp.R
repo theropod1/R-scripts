@@ -1,3 +1,22 @@
+##function jitterp()
+
+#' plot data as a jitter-plot
+#' @param x x values to plot (if single value and y is a vector, plot is vertical)
+#' @param y y value at which to plot (if single value, plot is horizontal)
+#' @param width standard deviation for jitter
+#' @param col color for points
+#' @param alpha opacity for points
+#' @param ... other parameters to be passed on to points()
+#' @return nothing (adds the points to the open plotting device as a jitter plot
+#' @importFrom graphics points
+#' @importFrom stats rnorm
+#' @importFrom paleoDiv add.alpha
+#' @export jitterp
+#' @examples
+#' c(1,2,3,2,3,2,3,4,4)->tmp
+#' hist(tmp)
+#' jitterp(x=tmp, y=1, width=0.1)
+
 jitterp<-function(x,y,width,col="black",alpha=0.5,...){
 
 if(length(y)==1){

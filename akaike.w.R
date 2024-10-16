@@ -4,6 +4,9 @@
 #' @param names (optional) a character vector of the same length as ICs containing the names of the models
 #' @param return_all Whether to return data.frame with ICs, delta_ICs, relative likelihood and weight (if TRUE), or just the weights (if FALSE, default)
 #' @return A dataframe containing AIC, delta_AIC, relative likelihood and akaike weight for each supplied AIC, or a numeric vector containing the akaike weights
+#' @export akaike.w
+#' @examples
+#' akaike.w(c(200,202,205), c("modelA","modelB","modelC"))
 
 #AIC= -2*log(likelihood)+2(K)*n/(n-K-1) #where K is n_parameters and likelihood is the probability of the data given a model (see stats::logLik())
 
