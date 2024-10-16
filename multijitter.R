@@ -1,5 +1,6 @@
 ##function multijitter()
-# plot multiple jitter plots
+
+#' plot multiple jitter plots
 #' @param x plotting statistic (numeric vector) or formula object from which a plotting statistic and grouping variable can be extracter (i.e. of form x~group)
 #' @param group grouping variable
 #' @param horiz logical indicating whether to plot horizontally
@@ -8,16 +9,19 @@
 #' @param xlab x axis label
 #' @param ylab y axis label
 #' @param col vector of border colors
+#' @param pch vector of symbols
 #' @param xlim x limits (data limits used if NULL)
 #' @param ylim y limits (data limits used if NULL)
 #' @param width standard deviation for jitter
 #' @param ax whether to plot axes
 #' @param add logical whether to add to existing plot (default: TRUE)
 #' @param ... other arguments to pass on to jitterp() and plot()
+#' @importFrom graphics axis
+#' @importFrom graphics mtext
 #' @export multijitter
 #' @examples 
 #' data.frame(p=rnorm(50), cat=rep(c("A","B","B","B","B"),10))->d
-#' multijitter(p~cat,d, add=F)
+#' multijitter(p~cat,d, add=FALSE)
 
 multijitter<-function(x, data=NULL, group=NULL, horiz=FALSE, order=NULL, xlab="", ylab="", col="black", pch=16, width=0.1, xlim=NULL, ylim=NULL,add=TRUE,ax=FALSE,...){
 if(inherits(x,"formula")){

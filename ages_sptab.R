@@ -1,11 +1,10 @@
 ##function ages_sptab()
 #' convert between an age matrix and a taxon-range table (as used by paleoDiv for diversity estimates)
 #' @param x either an age matrix or a taxon-range table in the respective formats. An age matrix contains two collumns named "FAD" and "LAD" (as used by strap for tree calibration), and the taxon names as row names. A taxon-range table is a data.frame() that contains the same information in columns named "max" and "min", and another column named "tna" containing the taxon name (and might contain any number of other columns with additional information)
-#' @param x Optional subset of taxa in x to include in output
+#' @param subset Optional subset of taxa in x to include in output
 #' @param tax Optional higher level taxon names to include in the output taxon-range table. If NA (default) the collumn is included, but filled with the current time stamp as a placeholder. If NULL, the collumn is not included in the output.
-#' @param
-#' @return
-#' @export
+#' @return converts an age matrix to a taxon-range table (data.frame) or vice versa
+#' @export ages_sptab
 
 ages_sptab<-function(x, subset=NULL, tax=NA){
 colnames(x)->cn

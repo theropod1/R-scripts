@@ -6,7 +6,7 @@
 #' @export arbl
 
     arbl<-function(phy,val=0.1){
-    if(!inherits(phy,"phylo")){error("object not of class phylo")}else{
+    if(!inherits(phy,"phylo")){stop("object not of class phylo")}else{
     if(!is.null(phy$edge.length)){warning("Phylogeny already has edge-lengths, overwriting them now.")}
     
     l<-length(phy$tip.label)+phy$Nnode-1    

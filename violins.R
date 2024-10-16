@@ -1,4 +1,5 @@
 ##function violins()
+
 #' plot multiple violin plots
 #' @param x plotting statistic (numeric vector) or formula object from which a plotting statistic and grouping variable can be extracter (i.e. of form x~group)
 #' @param group grouping variable

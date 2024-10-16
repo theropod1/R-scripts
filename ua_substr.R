@@ -19,7 +19,9 @@ ua_substr_<-function(x, options, match=NULL, ignore.case=TRUE, substitute=FALSE,
 TRUE->res2 #matches match (assumed true if match==NULL)
 
 if(!is.null(match)){
+
 grepl(x, match,ignore.case=ignore.case,...)->res2
+
 if(res2==FALSE){return(FALSE)#if match is given and x is not in match, return FALSE
 }else{#otherwise see if x is also in any other elements
     if(match%in%options){

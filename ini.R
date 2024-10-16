@@ -1,5 +1,5 @@
 ##function ini()
-#' evaluate whether a given string represents an unambiguous substring among a number of options
+#' evaluate whether a given string represents an unambiguous starting string among a number of options
 #' @param x string to test (or character vector with several strings to test)
 #' @param options character()-vector with options among which to test for unambiguity of x
 #' @param match (optional) character string (single or vector of length equal to length(x)) to match (if x is not a substring of match, FALSE is returned)
@@ -7,9 +7,9 @@
 #' @param substitute logical indicating whether to return logical TRUE/FALSE or to substitute and return the full character string corresponding to the unambiguous substring, if available
 #' @param ... additional arguments to pass on to grep()
 #' @return Returns either a logical() identifying if x is an unambiguous substring within options (and corresponding to match, if specified), or a character() containing the corresponding full character string
-#' @export ua_substr
+#' @export ini
 #' @examples
-#' ua_substr("giga", c("Giganotosaurus","Tyrannosaurus","Mapusaurus"), "Giganotosaurus")
+#' ini("giga", c("Giganotosaurus","Tyrannosaurus","Mapusaurus"), "Giganotosaurus")
 
 
 ini<-function(x, options, match=NULL, ignore.case=TRUE, substitute=FALSE,...){

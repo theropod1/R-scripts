@@ -3,7 +3,9 @@
 #' @param packages packages to install as character vector
 #' @param verbose whether to be verbose about status of package installation
 #' @return Nothing (installs packages not already installed)
-#' @export install.if.missing()
+#' @importFrom utils install.packages
+#' @importFrom utils installed.packages
+#' @export install.if.missing
 
 install.if.missing<-function(packages, verbose=TRUE){
 installed.packages()->p

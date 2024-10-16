@@ -97,7 +97,7 @@ bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
 if(exists("modelp")){
 modelp(lm)->pval
 if(pval==0){
-pval<-"<2.2×10⁻¹⁶"
+pval<-"<2.2E-16"
 }
 if(is.numeric(pval)){
 bquote(p == .(signif(pval,digits)))->mp}else{
