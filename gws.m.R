@@ -49,7 +49,7 @@ gws.m(20, "all")#gives the mass estimate for a TL of 20 m based on each regressi
 gws.pcl<-function(tl){0.7845*tl^1.0382}#precaudal length function (power curve from Mollet & Cailliet 1996, both measurements in metres)
 
 
-gws.fl<-function(tl){0.9442*(100*tl)-5.74411}#fork length function (power curve from Mollet & Cailliet 1996, both measurements in metres)
+gws.fl<-function(tl){0.9442*(100*tl)-5.74411}#fork length function (power curve from Kohler et al. 1996, both measurements in metres)
 
 
 mako.m<-function(tl_m=14){
@@ -68,24 +68,4 @@ fl<-0.8971*tl_m*100+1.7939#Lamna nasus, Kohler et al. 1995, nforkl=13
 out<- 1.4823e-5*fl^2.9641#nmass=15
 
 return(out)
-}
-
-
-
-##NOTES
-if(1==2){
-#approximate mean formula by solving equation system:
-log(gws.m(5)/gws.m(20)) / log(5/20)->b
-gws.m(5)/5^b->a
-#test
-curve(gws.m(x), xlim=c(0,20))
-curve(a*x^b, col="red", add=T)
-#mean formula is 8.069889*x^3.105513
-
-#estimate mean formula by linear regression across 1 m intervals in range 1-25 m
-gws.m(seq(1,25,1))->mm
-lm(log(mm)~log(as.numeric(names(mm))))->llmm
-names(llmm$coefficients)<-c("(Intercept)","TL")
-
-#mean formula is 8.020427*x^3.107862
 }
