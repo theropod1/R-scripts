@@ -28,6 +28,14 @@ if(method=="m1996"){out<-masses[,5]}#for mollet and cailliet 1996 n=327
 if(method=="t1984"){out<-masses[,6]}#for Tricas and McCosker 1984 n=127
 if(method=="m2015"){out<-masses[,7]}#for Mcclain et al. 2015 n=90
 
+##references:
+#Casey, J.G. and Pratt, H.L. 1985. Distribution of the White Shark,  Carcharodon carcharias, in the Western North Atlantic. Memoirs of the Southern California Academy of Sciences 9: 2–14.
+#Gottfried, M.D., Compagno, L.J. and Bowman. 1996. Size and skeletal anatomy of the giant" megatooth" shark  Carcharodon megalodon. In: Klimley, A.P. and Ainley, D.G. (eds.), Great White Sharks: The Biology of Carcharodon Carcharias, 55–66. Academic Press, San Diego.
+#Kohler, N.E., Casey, J.G. and Turner, P.A. 1996. Length-length and length-weight relationships for 13 shark species from the western North Atlantic. Fishery Bulletin 93: 412–418.
+#McClain, C.R., Balk, M.A., Benfield, M.C., Branch, T.A., Chen, C., Cosgrove, J., Dove, A.D., Gaskins, L.C., Helm, R.R. and Hochberg, F.G. 2015. Sizing ocean giants: patterns of intraspecific size variation in marine megafauna. PeerJ 3: e715.
+#Mollet, H.F. and Cailliet, G.M. 1996. Using Allometry to Predict Body Mass from Linear Measurements of the White Shark. Great White Sharks: the biology of Carcharodon carcharias: 81–89.
+#Tricas, T.C. and McCosker, J.E. 1984. Predatory Behaviour of the White Shark ( Carcharodon carcharias) with notes on its biology. Proceedings of the California Academy of Sciences 43 (14): 221–234.
+
 return(out)
 }
 ##
@@ -47,6 +55,7 @@ gws.fl<-function(tl){0.9442*(100*tl)-5.74411}#fork length function (power curve 
 mako.m<-function(tl_m=14){
 fl<- 0.9286*tl_m*100-1.7101#I. oxyrinchus, Kohler et al. 1995, n forklength= 199
 out<- 5.2432e-6*fl^3.1407#nmass=2081
+#Kohler, N.E., Casey, J.G. and Turner, P.A. 1996. Length-length and length-weight relationships for 13 shark species from the western North Atlantic. Fishery Bulletin 93: 412–418.
 
 return(out)
 }
@@ -54,20 +63,12 @@ return(out)
 
 lamna.m<-function(tl_m=14){
 fl<-0.8971*tl_m*100+1.7939#Lamna nasus, Kohler et al. 1995, nforkl=13
+#Kohler, N.E., Casey, J.G. and Turner, P.A. 1996. Length-length and length-weight relationships for 13 shark species from the western North Atlantic. Fishery Bulletin 93: 412–418.
 
 out<- 1.4823e-5*fl^2.9641#nmass=15
 
 return(out)
 }
-
-
-##references:
-#Casey, J.G. and Pratt, H.L. 1985. Distribution of the White Shark,  Carcharodon carcharias, in the Western North Atlantic. Memoirs of the Southern California Academy of Sciences 9: 2–14.
-#Gottfried, M.D., Compagno, L.J. and Bowman. 1996. Size and skeletal anatomy of the giant" megatooth" shark  Carcharodon megalodon. In: Klimley, A.P. and Ainley, D.G. (eds.), Great White Sharks: The Biology of Carcharodon Carcharias, 55–66. Academic Press, San Diego.
-#Kohler, N.E., Casey, J.G. and Turner, P.A. 1996. Length-length and length-weight relationships for 13 shark species from the western North Atlantic. Fishery Bulletin 93: 412–418.
-#McClain, C.R., Balk, M.A., Benfield, M.C., Branch, T.A., Chen, C., Cosgrove, J., Dove, A.D., Gaskins, L.C., Helm, R.R. and Hochberg, F.G. 2015. Sizing ocean giants: patterns of intraspecific size variation in marine megafauna. PeerJ 3: e715.
-#Mollet, H.F. and Cailliet, G.M. 1996. Using Allometry to Predict Body Mass from Linear Measurements of the White Shark. Great White Sharks: the biology of Carcharodon carcharias: 81–89.
-#Tricas, T.C. and McCosker, J.E. 1984. Predatory Behaviour of the White Shark ( Carcharodon carcharias) with notes on its biology. Proceedings of the California Academy of Sciences 43 (14): 221–234.
 
 
 
