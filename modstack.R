@@ -86,17 +86,33 @@ if(inherits(gpagen,"gpagen")) gpagen$coords->gpagen
 
 if(!inherits(gpagen,"array")) stop("gpagen must be an array or gpagen-type object!")
 
+##fix matrix, if present
+if(!is.null(links)){
+if(is.null(dim(links)[2])) matrix(as.numeric(links), ncol=2, byrow=T)->links
+}
+
 ##vectorize specimen settings
+if(length(dim(gpagen))==2){ ##if only single element
+
+##set limits, if unset
+if(is.null(xlim)) range(gpagen[,1])->xlim
+if(is.null(ylim)) range(gpagen[,2])->ylim
+gpagen->specimen
+points(specimen[,1], specimen[,2], col=col, pch=pch,...)
+
+if(!is.null(links)){##loop through links
+for(j in 1:nrow(links)){
+lines(x=specimen[links[j,],1],y=specimen[links[j,],2], col=col.line, lwd=lwd, lty=lty,...)
+}}##end linkages
+
+}else{##for arrays
+
 if(length(col)<dim(gpagen)[3]) rep(col,dim(gpagen)[3])[1:dim(gpagen)[3]]->col
 if(length(pch)<dim(gpagen)[3]) rep(pch,dim(gpagen)[3])[1:dim(gpagen)[3]]->pch
 if(length(col.line)<dim(gpagen)[3]) rep(col.line,dim(gpagen)[3])[1:dim(gpagen)[3]]->col.line
 if(length(lty)<dim(gpagen)[3]) rep(lty,dim(gpagen)[3])[1:dim(gpagen)[3]]->lty
 if(length(lwd)<dim(gpagen)[3]) rep(lwd,dim(gpagen)[3])[1:dim(gpagen)[3]]->lwd
 
-##fix matrix, if present
-if(!is.null(links)){
-if(is.null(dim(links)[2])) matrix(as.numeric(links), ncol=2, byrow=T)->links
-}
 
 ##set limits, if unset
 if(is.null(xlim)) range(gpagen[,1,])->xlim
@@ -128,4 +144,5 @@ lines(x=msh[links[j,],1],y=msh[links[j,],2], lwd=meanlwd, col=meancol)
 }
 
 
+}
 }
