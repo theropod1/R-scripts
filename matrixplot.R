@@ -22,8 +22,10 @@
 #' @importFrom graphics polygon
 #' @export matrixplot
 #' @examples
+#' matrix(c(1:9), nrow=3)->tmp_mat
+#' matrixplot(tmp_mat)
 
-matrixplot<-function(matrix, colscale.x=range(matrix,na.rm=T), colscale=c("white","black"), na.col="white", alpha=0.5, mar=c(1.1,6.1,5.1,1.1), adj.y=1, adj.x=c(0.5,0), srt.x=45, srt.y=0, digits=3, bold_threshold=NA, txt.col="black", txt.col.lab=txt.col, txt.cex=1, lab.cex=1,lines=T, spaces=c("_")){
+matrixplot<-function(matrix, colscale.x=range(matrix,na.rm=T), colscale=c("white","black"), na.col="white", alpha=0.5, mar=c(1.1,6.1,5.1,1.1), adj.y=1, adj.x=c(0.0,0), srt.x=45, srt.y=0, digits=2, bold_threshold=NA, txt.col="black", txt.col.lab=txt.col, txt.cex=1, lab.cex=1,lines=T, spaces=c("_")){
 
 par("mar")->omar
 par(xpd=NA, mar=mar)
@@ -39,6 +41,9 @@ xs_[even(ncol(matrix))]->xs
 
 rownames(matrix)->rows
 colnames(matrix)->cols
+
+if(is.null(rows)){rows<-c(1:nrow(matrix))}
+if(is.null(cols)){cols<-c(1:nrow(matrix))}
 
 if(!is.null(spaces)){#replace select characters by spaces
 if(is.character(spaces)){
@@ -102,10 +107,12 @@ par(xpd=NA, mar=omar)#restore par settings
 #' @param colx values corresponding to ends of color scale
 #' @param col colors corresponding to ends of color scale
 #' @param na.col color to use for NA values
-#' @return 
+#' @return a color or vector of colors
+#' @importFrom grDevices col2rgb
+#' @importFrom grDevices rgb
 #' @export intercol
 #' @examples
-
+#' intercol(c(0.5,0.6))
 
 intercol<-function(x, colx=c(0,1), col=c("white","black"), na.col="white"){
 
