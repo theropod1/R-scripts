@@ -74,11 +74,11 @@ par(xpd=oxpd)
 }
 
 
-
+##################
 
 
 ###function proc.viz()
-proc.viz<-function(gpagen,links=NULL, mean=TRUE, meancol="black", meancex=1.5, meanpch=16, meanlwd=2, col="grey", col.line=NA,lty=1,lwd=1, pch=16,xlab="x",ylab="y",xlim=NULL,ylim=NULL,...){
+proc.viz<-function(gpagen,links=NULL, mean=TRUE, meancol="black", meancex=1.5, meanpch=16, meanlwd=2, col="grey", col.line=col,lty=NA,lwd=1, pch=16,xlab="x",ylab="y",xlim=NULL,ylim=NULL,...){
 
 if(inherits(gpagen,"gpagen")) gpagen$coords->gpagen
 
