@@ -1,3 +1,5 @@
+###alternative plotting functions for Momocs and geomorph
+
 ###function modstack()
 modstack<-function(coo, indices=c(1:length(coo)), col=NULL, lwd=1, lty=1, xlim=NULL, ylim=NULL, alpha=1, xlab="", ylab="", xpd=FALSE, add=FALSE, asp=1,...){
 par("xpd")->oxpd
@@ -78,7 +80,7 @@ par(xpd=oxpd)
 
 
 ###function proc.viz()
-proc.viz<-function(gpagen,links=NULL, mean=TRUE, meancol="black", meancex=1.5, meanpch=16, meanlwd=2, col="grey", col.line=col,lty=NA,lwd=1, pch=16,xlab="x",ylab="y",xlim=NULL,ylim=NULL,...){
+proc.viz<-function(gpagen,links=NULL, mean=TRUE, meancol="black", meancex=1.5, meanpch=16, meanlwd=2, col="grey", col.line=col,lty=NA,lwd=1, pch=16,xlab="x",ylab="y",xlim=NULL,ylim=NULL, add=FALSE,...){
 
 if(inherits(gpagen,"gpagen")) gpagen$coords->gpagen
 
@@ -101,7 +103,7 @@ if(is.null(xlim)) range(gpagen[,1,])->xlim
 if(is.null(ylim)) range(gpagen[,2,])->ylim
 
 ##start plotting
-plot(plot(proc.comb$coords[,,1]), type="n", ylab=ylab, xlab=xlab, xlim=xlim, ylim=ylim, asp=1,...)
+if(!add) plot(plot(proc.comb$coords[,,1]), type="n", ylab=ylab, xlab=xlab, xlim=xlim, ylim=ylim, asp=1,...)
 
 for(i in 1:dim(gpagen)[3]){##loop through specimens
 gpagen[,,i]->specimen
