@@ -32,7 +32,9 @@ stop("model or y values must be specified")
 
 if(!is.null(model)){
 
-names(model$coefficients)[2]->vname
+if(length(names(model$coefficients))==1) names(model$coefficients)[1]->vname
+if(length(names(model$coefficients))>1) names(model$coefficients)[2]->vname
+
 length(x)->n
 data.frame(x)->df
 colnames(df)<-vname

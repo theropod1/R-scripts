@@ -70,7 +70,7 @@ stop("plotvar and predvar need to have the same length() or nrow()!")
 
 if(is.data.frame(predvar)){###
 predvar->df
-vnset<-TRUE#indicate that df already has correct varnames
+vnset<-TRUE#indicate that df already has correct varnames ##XXX
 }else{data.frame(x=type(predvar))->df}
 
 
@@ -85,7 +85,7 @@ if(is.null(varname)){
 if(grepl("loess",summary(lm)$call[1])==TRUE){#if loess model is given
 as.character(lm$xnames[1])->varname ##if adapted to plot multivariate models, remove indices here
 }else{#is assuming lm model
-if(length(names(lm$coefficients))==2) as.character(names(lm$coefficients)[2])->varname##if adapted to plot multivariate models, remove indices here
+if(length(names(lm$coefficients))>=2) as.character(names(lm$coefficients)[2])->varname##if adapted to plot multivariate models, remove indices here
 if(length(names(lm$coefficients))==1) as.character(names(lm$coefficients)[1])->varname
 if(length(names(lm$coefficients))>2) warning("detected lm with more than 2 coefficients, but no varname or predvars supplied!")
 }
@@ -97,8 +97,10 @@ gsub("\\(","",varname)->varname
 gsub("\\)","",varname)->varname
 }
 
+if(!(varname%in%colnames(df))) vnset<-FALSE
+
 ##set varnames for input data
-if(vnset==FALSE){
+if(vnset==FALSE){#if predvar doesn’t already have correct names
 colnames(df)<-varname}###
 #print(head(df))
 

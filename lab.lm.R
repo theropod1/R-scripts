@@ -65,16 +65,24 @@ adj<-c(0,1)
 
 }
 
+if("(Intercept)" %in% names(lm$coefficients)) intercept<-TRUE
+if(!("(Intercept)" %in% names(lm$coefficients))) intercept<-FALSE
+
 if(is.null(transformation)){
 
 if(length(coef(lm))==2){
 bquote(y == .(signif(coef(lm)[1],digits)) + .(signif(coef(lm)[2],digits)) * x)->eq
 }else{
 
-bquote(y == .(signif(coef(lm)[1],digits)) + .(signif(coef(lm)[2],digits)) * x[1])->eq
+if(length(coef(lm))==1) bquote(y == .(signif(coef(lm)[1],digits)) * x)->eq ##regression w/o intercept term
+##XXX
 
-if(length(coef(lm))>2){##run accross all coefficients
-for(i in 3:length(coef(lm))){
+if(length(coef(lm))>2){##run accross all coefficients if n>2
+
+if(intercept) bquote(y == .(signif(coef(lm)[1],digits)) + .(signif(coef(lm)[2],digits)) * x[1])->eq
+if(!intercept) bquote(y == .(signif(coef(lm)[1],digits)) * x[1])->eq
+
+for(i in ifelse(intercept,3,2):length(coef(lm))){
 ind<-i-1
 
 bquote(.(eq)+.(signif(coef(lm)[i],digits)) * x[.(ind)])->eq
