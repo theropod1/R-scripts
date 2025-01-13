@@ -19,12 +19,10 @@
 #' @param type type of input data to be used when converting the independent variable (defaults to as.numeric(), can also for example be as.Date)
 #' @param ... Other named parameters to be passed on to lines()
 #' @return Adds the graph for the model to the active plotting device, including a polygon showing the uncertainty range
-#' @importFrom stats coef
-#' @importFrom stats predict
-#' @importFrom stats qt
+#' @importFrom stats coef qt predict
 #' @importFrom grDevices dev.cur
-#' @importFrom graphics polygon
-#' @importFrom graphics lines
+#' @importFrom graphics polygon lines
+#' @importFrom paleoDiv add.alpha
 #' @export ci.lm
 #' @examples
 #' dd<-data.frame(x=c(1,2,3,4,5),y=c(2,3.3,4,4.7,8))
@@ -87,7 +85,9 @@ if(is.null(varname)){
 if(grepl("loess",summary(lm)$call[1])==TRUE){#if loess model is given
 as.character(lm$xnames[1])->varname ##if adapted to plot multivariate models, remove indices here
 }else{#is assuming lm model
-as.character(names(lm$coefficients)[2])->varname##if adapted to plot multivariate models, remove indices here
+if(length(names(lm$coefficients))==2) as.character(names(lm$coefficients)[2])->varname##if adapted to plot multivariate models, remove indices here
+if(length(names(lm$coefficients))==1) as.character(names(lm$coefficients)[1])->varname
+if(length(names(lm$coefficients))>2) warning("detected lm with more than 2 coefficients, but no varname or predvars supplied!")
 }
 }
 
