@@ -8,7 +8,8 @@
 #' @param digits Number of significant digits to which to round parameters of model formula 
 #' @param transformation Transformation used by model (can be "LOG" or "log" for natural logarithm, "LOG10" or "log10" for base-10-logarithm
 #' @param spacing Line spacing to use between first and second line
-#' @param pvalue Logical indicating whether to plot p value of model in second line. If FALSE (default), then multiple R-squared is used.
+#' @param pvalue Logical indicating whether to plot p value of model in second line. If FALSE (default), then multiple R-squared is shown.
+#' @param pvalue Logical indicating whether to plot root mean square error of model in second line. If FALSE (default), then multiple R-squared is shown.
 #' @param ... Other parameters to be passed on to text()
 #' @return Adds the model formula and R-squared or p-value to the current plot in the specified location
 #' @importFrom graphics text
@@ -27,7 +28,7 @@
 #' lab.lm(m1,col="red",at="topleft",digits=3,spacing=1.5)
 
 
-lab.lm<-function(lm, at="topleft", adj=c(0,1), digits=4, transformation=NULL,spacing=1.5, pvalue=FALSE,...){
+lab.lm<-function(lm, at="topleft", adj=c(0,1), digits=4, transformation=NULL,spacing=1.5, pvalue=FALSE, RMSE=FALSE,...){
 par("usr")->bb
 diff(range(bb[1:2]))/50->xu
 diff(range(bb[3:4]))/50->yu
@@ -90,15 +91,24 @@ bquote(.(eq)+.(signif(coef(lm)[i],digits)) * x[.(ind)])->eq
 }
 }
 
-bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
+if(!intercept) bquote(R[pseudocentered]^2  == .(signif(1-sum(resid(lm.skulll0)^2)/sum((predict(lm.skulll0)+resid(lm.skulll0)-mean(predict(lm.skulll0)+resid(lm.skulll0)))^2),digits)))->rsq ##to force a pseudo-centered R², even if no intercept is included (still more useful for comparison than uncentered R²!)
+if(intercept) bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
+
+bquote(RMSE == .(sqrt(mean(resid(lm)^2))))->rmse
 
 }else if(transformation=="log" | transformation=="LOG"){
 bquote(y == .(signif(exp(coef(lm)[1]),digits))*x^.(signif(coef(lm)[2],digits)))->eq
-bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
+
+bquote(R[log-transformed]^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
+
+bquote(RMSE == .(sqrt(mean(resid(lm)^2))))->rmse ##XXX TODO instead of log-residuals, use untransformed residuals to permit direct comparisons
 
 }else if(transformation=="log10" | transformation=="LOG10"){
 bquote(y == .(signif(10^(coef(lm)[1]),digits))*x^.(signif(coef(lm)[2],digits)))->eq
-bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
+
+bquote(R[log-transformed]^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
+
+bquote(RMSE == .(sqrt(mean(resid(lm)^2))))->rmse ##XXX TODO instead of log-residuals, use untransformed residuals to permit direct comparisons
 
 }
 
@@ -116,10 +126,10 @@ bquote(p == .(pval,digits))->mp
 message("inserting label at x = ", xtxt, ", y = ",ytxt)
 
 text(x=xtxt,y=ytxt, adj=adj, eq,...)
-if(pvalue==TRUE & exists("mp")){
-text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), mp,...)
-}else{
-text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), rsq,...)}
 
+if(pvalue & exists("mp")){text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), mp,...)}else{
+if(!RMSE) text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), rsq,...)##plot R²
+if(RMSE) text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), rmse,...)##plot root mean square error
+}
 
 }
