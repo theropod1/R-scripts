@@ -1,13 +1,13 @@
 ##readme:
 #lesson 1 contains basic information about R syntax and object types, data manipulation and structures and basic arithmetic and statistical operations
 
-#on windows, start by setting your working directory using the following command:
+##Start by setting your working directory using the following command:
 
 #setwd("path/to/directory")
 
 # R will ignore anything written to the right of a "#" in a line, therefore you need to omit any leading #s in order for the command to be executed upon hitting enter. Just replace "path/to/directory" with whatever directory you want to use as your working folder:
 
-#(in Linux, you can also simply open a terminal window in whatever directory you want to work in, start R within the terminal, and you will be in that working directory automatically)
+#(on Linux, you can also simply open a terminal window in whatever directory you want to work in, start R within the terminal, and you will be in that working directory automatically)
 
 ##THING TO NOTE HERE: in Windows, file or folder paths are usually written with backslashes (\) between the levels, i.e. something like "C:\User\Documents\R-project". However, R expects you to put your the paths in unix format, using normal slashes (/), not backslashes. I.e., you need to type "C:/User/Documents/R-project", even if you are using Windows. 
 ##
@@ -98,8 +98,16 @@ class(a)
 a<-TRUE # this is a boolean value/logical statement, class logical
 class(a)
 
-a<-factor(c("A","B","C")) # this is a categorical variable, class factor
+a<-as.Date("2025-01-24") #this is a date. Dates are stored internally as a numeric value of days relative to an origin (by default "1970-01-01"), but are displayed in date format
 class(a)
+as.numeric(a)
+
+a<-as.POSIXct("2025-01-24 20:00:00", tz="CET") #this is a Posix time, similar to a date but more precise (by default, internal storage is as number of seconds since 1970)
+class(a)
+as.numeric(a)
+
+a<-factor(c("A","B","C")) # this is a categorical variable, class factor
+class(a) #NOTE: in practice, it is rare for you to have to manually "make" a factor, as character() or numeric() vectors are often automatically coerced to factor.
 
 #There are many other classes, some are part of packages, but they are mostly built upon, or contain, the previous few basic classes.
 
