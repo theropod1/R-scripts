@@ -91,7 +91,7 @@ bquote(.(eq)+.(signif(coef(lm)[i],digits)) * x[.(ind)])->eq
 }
 }
 
-if(!intercept) bquote(R[pseudocentered]^2  == .(signif(1-sum(resid(lm.skulll0)^2)/sum((predict(lm.skulll0)+resid(lm.skulll0)-mean(predict(lm.skulll0)+resid(lm.skulll0)))^2),digits)))->rsq ##to force a pseudo-centered R², even if no intercept is included (still more useful for comparison than uncentered R²!)
+if(!intercept) bquote(R[pseudocentered]^2  == .(signif(1-sum(resid(lm)^2)/sum((predict(lm)+resid(lm)-mean(predict(lm)+resid(lm)))^2),digits)))->rsq ##to force a pseudo-centered R², even if no intercept is included (still more useful for comparison than uncentered R²!)
 if(intercept) bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
 
 bquote(RMSE == .(sqrt(mean(resid(lm)^2))))->rmse
