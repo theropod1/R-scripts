@@ -12,6 +12,8 @@
 #' @param horizontal Logical indicating whether to plot the vertical line(s)
 
 #' @param retransform Function containing transformation to apply to y values (e.g. exp() if regression was log-transformed)
+#' @param retransform_lab Function containing transformation to apply to label y values only (e.g. if regression is plotted in log space but retransformed label is desired)
+
 #' @param level Coverage of the confidence/prediction intervals
 #' @param col color for lines and labels
 #' @param cex font size for labels
@@ -24,13 +26,13 @@
 #' @importFrom stats approx lm
 
 
-regres<-function(model=NULL,x,y=NULL,labelx=FALSE,labely=TRUE, CI=FALSE, PI=FALSE, suppress.center=FALSE, vertical=TRUE, horizontal=TRUE, retransform=NULL, level=0.9, col="black", cex=0.8, adj.y=c(0,-0.15), adj.x=c(1,-0.15), digits=4,...){
+regres<-function(model=NULL,x,y=NULL,labelx=FALSE,labely=TRUE, CI=FALSE, PI=FALSE, suppress.center=FALSE, vertical=TRUE, horizontal=TRUE, retransform=NULL,retransform_lab=NULL, level=0.9, col="black", cex=0.8, adj.y=c(0,-0.15), adj.x=c(1,-0.15), digits=4,...){
 
 if(is.null(model) & is.null(y)){
 stop("model or y values must be specified")
 }
 
-if(!is.null(model)){
+if(!is.null(model) & !inherits(model,"function")){
 
 if(length(names(model$coefficients))==1) names(model$coefficients)[1]->vname
 if(length(names(model$coefficients))>1) names(model$coefficients)[2]->vname
@@ -54,6 +56,9 @@ c(y,as.numeric(predict(model, df, interval="prediction", level=level)[,2]),as.nu
 c(x,rep(df[,1],2))->x
 }
 
+
+}else if(inherits(model,"function")){
+as.numeric(model(x))->y
 }
 
 if(!is.null(retransform)){
@@ -72,8 +77,10 @@ for(i in 1:length(x)){
 #if(vertical & horizontal){
 #lines(x=c(x[i],x[i],par("usr")[1]), y=c(par("usr")[3],y[i],y[i]), col=col,...)
 #}else 
+
 if(vertical){
 lines(x=c(x[i],x[i]), y=c(par("usr")[3],y[i]), col=col,...)
+
 if(labelx){
 
 if(length(adj.x)<2){
@@ -82,9 +89,12 @@ adj.x[1]<-0.5
 
 }
 
-text(x=x[i], y=approx(x=c(1,0), y=range(c(par("usr")[3],y[i])), xout=adj.x[1])$y, signif(x[i],digits), col=col, cex=cex, adj=adj.x,srt=270)
+labelt<-x[[i]]
+if(!is.null(retransform_lab)) retransform_lab(labelt)->labelt
 
-print(c(x[i],approx(x=c(1,0), y=range(c(par("usr")[3],y[i])), xout=adj.x[1])$y))
+text(x=x[i], y=approx(x=c(1,0), y=range(c(par("usr")[3],y[i])), xout=adj.x[1])$y, signif(labelt,digits), col=col, cex=cex, adj=adj.x,srt=270, xpd=T)
+
+#print(c(x[i],approx(x=c(1,0), y=range(c(par("usr")[3],y[i])), xout=adj.x[1])$y))
 
 }
 }
@@ -94,7 +104,10 @@ lines(x=c(x[i],par("usr")[1]), y=c(y[i],y[i]), col=col,...)
 ##draw labels
 
 if(labely){
-text(y=y[i], x=approx(x=c(0,1), y=range(c(x[i],par("usr")[1])), xout=adj.y[1])$y, signif(y[i],digits),col=col, cex=cex, adj=adj.y)
+labelt<-y[i]
+if(!is.null(retransform_lab)) retransform_lab(labelt)->labelt
+
+text(y=y[i], x=approx(x=c(0,1), y=range(c(x[i],par("usr")[1])), xout=adj.y[1])$y, signif(labelt,digits),col=col, cex=cex, adj=adj.y, xpd=T)
 }
 }
 

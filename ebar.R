@@ -17,6 +17,7 @@
 #' @details ebar is made to flexibly accept either a mean value and error margins (e.g. standard errors or deviations) to be added and subtracted from the mean, or a lower and upper absolute value, depending on the settings.
 #' @return Adds error bars of specified length or with specified lower and upper ends to the current plot.
 #' @importFrom graphics arrows
+#' @importFrom paleoDiv add.alpha
 #' @export ebar
 #' @examples
 #' plot(c(1,2,3,4,5,6)~c(2,3,4,5,6,7))
@@ -48,10 +49,10 @@ x$lower->lower
 
 if(is.null(upper)){
 if("upr" %in% colnames(x)){
-x$lwr->lower
+x$upr->upper
 }
 if("upper" %in% colnames(x)){
-x$lower->lower
+x$upper->upper
 }
 
 }

@@ -13,6 +13,11 @@
 #' @param plot logical indicating whether to plot results
 #' @param ... additional plotting arguments to be passed on to ebar()
 #' @export boot_cilm
+#' @examples
+#' rnorm(70)->all
+#' data.frame(tl=all,ujp=rnorm(n=70,mean=b, sd=0.1)->all
+#' boot_cilm(x=log(all$tl), y=log(all$ujp), xout=log(seq(1000,7000,500)), plot=F)->b
+#' ebar(x=exp(b$interval$x), upper=exp(b$interval$upr), lower=exp(b$interval$lwr),col="red",polygon=T)
 
 boot_cilm<-function(x,y,data=NULL, reps=1000,range=par("usr")[1:2],steps=101,xout=NULL,quantiles=c(0.05,0.95),level=0.9, plot=T,...){
 list()->out
