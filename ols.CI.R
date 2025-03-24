@@ -1,10 +1,12 @@
 ##ols.CI function
 #' Calculate parametric confidence and prediction interval formulas using ordinary least squares
-#' @param x
-#' @param y
+#' @param x x values
+#' @param y y values
 #' @param x_ (optional) values at which confidence and prediction bands should be estimated
 #' @param level desired confidence level (defaults to 0.9=90%)
 #' @param digits (optional) desired significant digits to round to
+#' @importFrom stats var
+#' @importFrom stats residuals
 #' @export ols.CI
 #' @return either a data.frame with estimated upper and lower confidence and prediction bands (if x_!=NULL), or a list() object containing all the information necessary for the parametric construction of confidence intervals: the model formula, standard error of the estimate, critical t value at the chosen confidence level and degrees of freedom of the model, mean and variance of the independent variable, sample size and the complete formulas for the confidence and prediction intervals
 #' @examples
@@ -19,7 +21,7 @@ see<-summary(model)$sigma #residual standard error (SEE)
 
 mean(x)->xmean
 var(x)->xvar
-length(resid(model))->n
+length(residuals(model))->n
 
 if(!is.null(digits) & is.null(x_)){ #round figures to signif significant digits
 t_crit<-signif(t_crit,digits)

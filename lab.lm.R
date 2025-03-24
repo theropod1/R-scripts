@@ -9,11 +9,12 @@
 #' @param transformation Transformation used by model (can be "LOG" or "log" for natural logarithm, "LOG10" or "log10" for base-10-logarithm
 #' @param spacing Line spacing to use between first and second line
 #' @param pvalue Logical indicating whether to plot p value of model in second line. If FALSE (default), then multiple R-squared is shown.
-#' @param pvalue Logical indicating whether to plot root mean square error of model in second line. If FALSE (default), then multiple R-squared is shown.
+#' @param RMSE Logical indicating whether to plot root mean square error of model in second line. If FALSE (default), then multiple R-squared is shown.
 #' @param ... Other parameters to be passed on to text()
 #' @return Adds the model formula and R-squared or p-value to the current plot in the specified location
 #' @importFrom graphics text
 #' @importFrom graphics par
+#' @importFrom stats residuals
 #' @export lab.lm
 #' @examples
 #' dd<-data.frame(x=c(1,2,3,4,5),y=c(2,3.3,4,4.7,8))
@@ -91,24 +92,24 @@ bquote(.(eq)+.(signif(coef(lm)[i],digits)) * x[.(ind)])->eq
 }
 }
 
-if(!intercept) bquote(R[pseudocentered]^2  == .(signif(1-sum(resid(lm)^2)/sum((predict(lm)+resid(lm)-mean(predict(lm)+resid(lm)))^2),digits)))->rsq ##to force a pseudo-centered R², even if no intercept is included (still more useful for comparison than uncentered R²!)
+if(!intercept) bquote(R[pseudocentered]^2  == .(signif(1-sum(residuals(lm)^2)/sum((predict(lm)+residuals(lm)-mean(predict(lm)+residuals(lm)))^2),digits)))->rsq ##to force a pseudo-centered R², even if no intercept is included (still more useful for comparison than uncentered R²!)
 if(intercept) bquote(R^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
 
-bquote(RMSE == .(sqrt(mean(resid(lm)^2))))->rmse
+bquote(RMSE == .(sqrt(mean(residuals(lm)^2))))->rmse
 
 }else if(transformation=="log" | transformation=="LOG"){
 bquote(y == .(signif(exp(coef(lm)[1]),digits))*x^.(signif(coef(lm)[2],digits)))->eq
 
 bquote(R[log-transformed]^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
 
-bquote(RMSE == .(sqrt(mean(resid(lm)^2))))->rmse ##XXX TODO instead of log-residuals, use untransformed residuals to permit direct comparisons
+bquote(RMSE == .(sqrt(mean(residuals(lm)^2))))->rmse ##XXX TODO instead of log-residuals, use untransformed residuals to permit direct comparisons
 
 }else if(transformation=="log10" | transformation=="LOG10"){
 bquote(y == .(signif(10^(coef(lm)[1]),digits))*x^.(signif(coef(lm)[2],digits)))->eq
 
 bquote(R[log-transformed]^2 == .(signif(summary(lm)$r.squared,digits)))->rsq
 
-bquote(RMSE == .(sqrt(mean(resid(lm)^2))))->rmse ##XXX TODO instead of log-residuals, use untransformed residuals to permit direct comparisons
+bquote(RMSE == .(sqrt(mean(residuals(lm)^2))))->rmse ##XXX TODO instead of log-residuals, use untransformed residuals to permit direct comparisons
 
 }
 
