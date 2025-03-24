@@ -20,13 +20,13 @@
 #' rnorm(70)->all
 #' data.frame(tl=all,ujp=rnorm(n=70,mean=450, sd=0.1))->all
 #' boot_cilm(x=log(all$tl), y=log(all$ujp), xout=log(seq(1000,7000,500)), plot=FALSE)->b
-#' ebar(x=exp(b$interval$x), upper=exp(b$interval$upr), lower=exp(b$interval$lwr),col="red",polygon=TRUE)
-#'
 #' t<-data.frame(x=rnorm(100))
 #' t$y<-rnorm(100,sd=0.3,mean=t$x)
 #' predict(lm(y~x,t), data.frame(x=seq(-3,3,0.1)),interval="confidence")->t2
 #' plot(t)
 #' ci.lm(lm(y~x,t))
+#' ebar(x=exp(b$interval$x), upper=exp(b$interval$upr), lower=exp(b$interval$lwr),col="red",polygon=TRUE)
+#'
 #' ebar(x=seq(-3,3,0.1), upper=t2[,3], lower=t2[,2],polygon=TRUE)
 #' boot_cilm(x,y,data=t, xout=0.5,plot=FALSE,interval="prediction")->a
 #' abline(a$lm)

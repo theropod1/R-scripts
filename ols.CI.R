@@ -9,8 +9,6 @@
 #' @importFrom stats residuals
 #' @export ols.CI
 #' @return either a data.frame with estimated upper and lower confidence and prediction bands (if x_!=NULL), or a list() object containing all the information necessary for the parametric construction of confidence intervals: the model formula, standard error of the estimate, critical t value at the chosen confidence level and degrees of freedom of the model, mean and variance of the independent variable, sample size and the complete formulas for the confidence and prediction intervals
-#' @examples
-#' text(0,15,adj=0,ols.CI(x,y)$CI) ##example usage to print the 
 
 
 ols.CI<-function(x,y,x_=NULL,level=0.9,digits=NULL){
