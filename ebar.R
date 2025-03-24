@@ -26,15 +26,7 @@
 
 ebar<-function(x, upper=NULL, lower=NULL, y=NULL, plusminus=NULL, vertical=TRUE,angle=90,code=3, alpha=0.5, col="black", border=NA,polygon=FALSE,...){
 #prep points
-if(is.data.frame(x)){
-if("x" %in% colnames(x) & "y" %in% colnames(x) & is.null(y)){
-x$y->y
-x$x->x
-
-}else{
-y<-x[,2]
-x<-x[,1]
-}
+if(is.data.frame(x)){#pull all values from first argument if possible
 
 if(is.null(lower)){
 
@@ -44,7 +36,6 @@ x$lwr->lower
 if("lower" %in% colnames(x)){
 x$lower->lower
 }
-
 }
 
 if(is.null(upper)){
@@ -56,6 +47,11 @@ x$upper->upper
 }
 
 }
+
+if("y" %in% colnames(x) & is.null(y)) x$y->y
+else y<-x[,2]
+if("x" %in% colnames(x)) x$x->x
+else x<-x[,1]
 
 }
 

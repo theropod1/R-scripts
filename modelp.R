@@ -10,7 +10,7 @@
 #' b<-rnorm(n=20, mean=a, sd=0.1)
 #' modelp(lm(b~a))
 
-modelp<-function(x, signif=NULL){
+modelp<-function(x, signif=10){
 summary(x)$fstatistic->f
 
 if(!is.null(signif)){

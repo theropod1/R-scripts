@@ -11,6 +11,7 @@
 #' @param quantiles
 #' @param level desired confidence level
 #' @param plot logical indicating whether to plot results
+#' @param interval "confidence" | "prediction", defaults to "confidence", for construction of bootstrap confidence interval. if == "prediction", a randomly sampled residual is added to the prediction from each resampled model as an error term.
 #' @param ... additional plotting arguments to be passed on to ebar()
 #' @export boot_cilm
 #' @examples
@@ -18,10 +19,47 @@
 #' data.frame(tl=all,ujp=rnorm(n=70,mean=b, sd=0.1)->all
 #' boot_cilm(x=log(all$tl), y=log(all$ujp), xout=log(seq(1000,7000,500)), plot=F)->b
 #' ebar(x=exp(b$interval$x), upper=exp(b$interval$upr), lower=exp(b$interval$lwr),col="red",polygon=T)
+#'
+#' t<-data.frame(x=rnorm(100))
+#' t$y<-rnorm(100,sd=0.3,mean=t$x)
+#' plot(t)
+#' ci.lm(lm(y~x,t))
+#' predict(lm(y~x,t), data.frame(x=seq(-3,3,0.1)),interval="confidence")->t2
+#' ebar(x=seq(-3,3,0.1), upper=t2[,3], lower=t2[,2],polygon=T)
+#' boot_cilm(x,y,data=t, xout=0.5,plot=F,interval="prediction")->a
+#' abline(a$lm)
+#' if(!exists("preds_")){
+#' predsCI<-matrix(ncol=length(a$lms),nrow=length(seq(par("usr")[1],par("usr")[2], length=100)))
+#' predsPI<-matrix(ncol=length(a$lms),nrow=length(seq(par("usr")[1],par("usr")[2], length=100)))
+#' 
+#' preds_<-data.frame(x=seq(par("usr")[1],par("usr")[2], length=100))
+#' 
+#' for(i in 1:length(a$lms)){
+#' predict(a$lms[[i]], preds_)+sample(residuals(a$lms[[i]]),1)->predsPI[,i]#for PI
+#' predict(a$lms[[i]], preds_)->predsCI[,i]#for CI
+#' }
+#' 
+#' apply(predsCI[,], 1, FUN=quantile, na.rm=T, probs=0.05)->preds_$lwr
+#' apply(predsCI[,], 1, FUN=quantile, na.rm=T, probs=0.95)->preds_$upr
+#' apply(predsPI[,], 1, FUN=quantile, na.rm=T, probs=0.05)->preds_$lwr_PI
+#' apply(predsPI[,], 1, FUN=quantile, na.rm=T, probs=0.95)->preds_$upr_PI
+#' }
+#' lines(preds_$lwr_PI~preds_$x, lty=2,col=add.alpha("black"))
+#' lines(preds_$upr_PI~preds_$x, lty=2,col=add.alpha("black"))
+#' ebar(preds_,polygon=T,alpha=0.2)
 
-boot_cilm<-function(x,y,data=NULL, reps=1000,range=par("usr")[1:2],steps=101,xout=NULL,quantiles=c(0.05,0.95),level=0.9, plot=T,...){
+##
+boot_cilm<-function(x,y,data=NULL, reps=1000,range=NULL,steps=101,xout=NULL,quantiles=c(0.05,0.95),level=0.9, plot=T, interval="confidence",...){
+
+if(is.null(range) & is.null(xout)) range<-par("usr")[1:2] #if range and xout are both null, use current plotting device for range
+
 list()->out
-##pull variables from data if possible
+if(!is.null(data)){##pull variables from data if possible
+if(inherits(data,c("data.frame","list"))){
+x<-data[[paste(substitute(x))]]
+y<-data[[paste(substitute(y))]]
+}}
+
 if(length(x)!=length(y)) stop("y and x not same length!")
 #prepare xout
 if(is.null(xout)) xout<-seq(range[1], range[2],diff(range)/steps)
@@ -33,7 +71,7 @@ out$lm<-lm(y~x)
 
 out$lms<-list()
 
-##loop and sampe
+##loop and sample
 for(i in 1:reps){
 sample(c(1:length(x)),replace=T)->ind
 x[ind]->x_
@@ -43,7 +81,11 @@ lm(y~x, data=dat)->lm_
 
 out$lms[[i]]<-lm_
 
-predict(lm_, out$preds)->out$preds[,i+1]
+
+if(interval=="confidence") predict(lm_, out$preds)->out$preds[,i+1]
+if(interval=="prediction") predict(lm_, out$preds)+sample(residuals(lm_),1)->out$preds[,i+1]
+
+
 }#end loop and sample
 #print(out$preds)
 #return(out$preds)
@@ -58,20 +100,41 @@ apply(out$preds[,-1], 1, FUN=quantile, na.rm=T, probs=quantiles[2])->out$interva
 if(plot){
 ebar(x=xout,lower=out$interval$lwr, upper=out$interval$upr, polygon=TRUE,...)
 }
+if(nrow(out$interval)<20) print(out$interval)
 
 invisible(out)
 }
 
 }
+##
 
 
-##testing
-#
-#t<-data.frame(x=rnorm(100))
-#t$y<-rnorm(100,sd=0.3,mean=t$x)
-#plot(t)
-#ci.lm(lm(y~x,t))
-#predict(lm(y~x,t), data.frame(x=seq(-3,3,0.1)),interval="confidence")->t2
-#ebar(x=seq(-3,3,0.1), upper=t2[,3], lower=t2[,2],polygon=T)
-##boot_cilm(t$x, t$y,reps=500,col="red")->tp
+
+##function bootCI()
+#' basic bootstrap confidence interval 
+#'
+#' @param x
+#' @param fun
+#' @param level desired confidence level
+#' @param reps number of bootstrap repetitions
+#' @param ... other arguments to pass on to fun
+#' @details computes a bootstrap confidence interval for the result of any function that can be applied to a resampling of x
+#' @return either a numeric of length 2 giving the confidence interval at the desired confidence level, or a numeric vector of length reps containing every individual result of fun
+#' @export bootCI
+##
+bootCI<-function(x,fun=NULL,level=0.9,reps=1000, CI=TRUE,wt=1,...){
+upr<-1-(1-level)/2
+lwr<-0+(1-level)/2
+
+if(length(wt)!=length(x)) rep(wt,length(x))[1:length(x)]->wt
+
+x[which(!is.na(x))]->x
+
+if(!is.null(fun)) replicate(reps,fun(sample(x,length(x),replace=TRUE,prob=wt),...))->x_
+if(is.null(fun)) replicate(reps,sample(x,length(x),replace=TRUE,prob=wt),...)->x_
+
+if(CI==FALSE){return(x_)
+}else{quantile(x_,c(lwr,upr))->ci
+return(ci)}
+}
 ##
