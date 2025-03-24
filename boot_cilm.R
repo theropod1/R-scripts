@@ -1,22 +1,24 @@
 ##function boot_cilm()
 #' construct a linear model confidence interval via bootstrapping
 #'
-#' @param x
-#' @param y
-#' @param data
-#' @param reps
-#' @param range
-#' @param steps
-#' @param xout
-#' @param quantiles
-#' @param level desired confidence level
+#' @param x x values
+#' @param y y values
+#' @param data (optional) data.frame from which to draw x and y
+#' @param reps number of bootstrap repetitions (default 1000)
+#' @param range (optional) range across which to calculate confidence or prediction band (defaults to the width of current plot if xout is not specified)
+#' @param steps (optional) number of steps across range
+#' @param xout (optional) x value at which to calculate confidence or prediction band for y
+#' @param quantiles quantiles at which to calculate  at which to calculate confidence or prediction band margins
+#' @param level desired confidence level (overrides quantiles)
 #' @param plot logical indicating whether to plot results
 #' @param interval "confidence" | "prediction", defaults to "confidence", for construction of bootstrap confidence interval. if == "prediction", a randomly sampled residual is added to the prediction from each resampled model as an error term.
 #' @param ... additional plotting arguments to be passed on to ebar()
+#' @importFrom stats residuals
+#' @importFrom stats quantile
 #' @export boot_cilm
 #' @examples
 #' rnorm(70)->all
-#' data.frame(tl=all,ujp=rnorm(n=70,mean=b, sd=0.1)->all
+#' data.frame(tl=all,ujp=rnorm(n=70,mean=450, sd=0.1))->all
 #' boot_cilm(x=log(all$tl), y=log(all$ujp), xout=log(seq(1000,7000,500)), plot=F)->b
 #' ebar(x=exp(b$interval$x), upper=exp(b$interval$upr), lower=exp(b$interval$lwr),col="red",polygon=T)
 #'
@@ -26,7 +28,7 @@
 #' ci.lm(lm(y~x,t))
 #' predict(lm(y~x,t), data.frame(x=seq(-3,3,0.1)),interval="confidence")->t2
 #' ebar(x=seq(-3,3,0.1), upper=t2[,3], lower=t2[,2],polygon=T)
-#' boot_cilm(x,y,data=t, xout=0.5,plot=F,interval="prediction")->a
+#' boot_cilm(x,y,data=t, xout=0.5,plot=FALSE,interval="prediction")->a
 #' abline(a$lm)
 #' if(!exists("preds_")){
 #' predsCI<-matrix(ncol=length(a$lms),nrow=length(seq(par("usr")[1],par("usr")[2], length=100)))
@@ -63,6 +65,9 @@ y<-data[[paste(substitute(y))]]
 if(length(x)!=length(y)) stop("y and x not same length!")
 #prepare xout
 if(is.null(xout)) xout<-seq(range[1], range[2],diff(range)/steps)
+
+if(is.null(quantiles) & is.null(level)) stop("level or quantiles must be specified")
+if(!is.null(level)) quantiles<-range(c(1-(1-level)/2,lwr<-0+(1-level)/2))
 quantiles<-range(quantiles)
 
 #prepare list
@@ -113,10 +118,12 @@ invisible(out)
 ##function bootCI()
 #' basic bootstrap confidence interval 
 #'
-#' @param x
-#' @param fun
+#' @param x univariate dataset for which to calculate CI
+#' @param fun function to apply across reps
 #' @param level desired confidence level
 #' @param reps number of bootstrap repetitions
+#' @param CI logical whether to return CI (otherwise all results are returned as a vector)
+#' @param wt optional vector of weights (defaults to equal weighting of all values in x), must be same length as x
 #' @param ... other arguments to pass on to fun
 #' @details computes a bootstrap confidence interval for the result of any function that can be applied to a resampling of x
 #' @return either a numeric of length 2 giving the confidence interval at the desired confidence level, or a numeric vector of length reps containing every individual result of fun
