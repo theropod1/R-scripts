@@ -19,15 +19,15 @@
 #' @examples
 #' rnorm(70)->all
 #' data.frame(tl=all,ujp=rnorm(n=70,mean=450, sd=0.1))->all
-#' boot_cilm(x=log(all$tl), y=log(all$ujp), xout=log(seq(1000,7000,500)), plot=F)->b
-#' ebar(x=exp(b$interval$x), upper=exp(b$interval$upr), lower=exp(b$interval$lwr),col="red",polygon=T)
+#' boot_cilm(x=log(all$tl), y=log(all$ujp), xout=log(seq(1000,7000,500)), plot=FALSE)->b
+#' ebar(x=exp(b$interval$x), upper=exp(b$interval$upr), lower=exp(b$interval$lwr),col="red",polygon=TRUE)
 #'
 #' t<-data.frame(x=rnorm(100))
 #' t$y<-rnorm(100,sd=0.3,mean=t$x)
+#' predict(lm(y~x,t), data.frame(x=seq(-3,3,0.1)),interval="confidence")->t2
 #' plot(t)
 #' ci.lm(lm(y~x,t))
-#' predict(lm(y~x,t), data.frame(x=seq(-3,3,0.1)),interval="confidence")->t2
-#' ebar(x=seq(-3,3,0.1), upper=t2[,3], lower=t2[,2],polygon=T)
+#' ebar(x=seq(-3,3,0.1), upper=t2[,3], lower=t2[,2],polygon=TRUE)
 #' boot_cilm(x,y,data=t, xout=0.5,plot=FALSE,interval="prediction")->a
 #' abline(a$lm)
 #' if(!exists("preds_")){
@@ -41,17 +41,17 @@
 #' predict(a$lms[[i]], preds_)->predsCI[,i]#for CI
 #' }
 #' 
-#' apply(predsCI[,], 1, FUN=quantile, na.rm=T, probs=0.05)->preds_$lwr
-#' apply(predsCI[,], 1, FUN=quantile, na.rm=T, probs=0.95)->preds_$upr
-#' apply(predsPI[,], 1, FUN=quantile, na.rm=T, probs=0.05)->preds_$lwr_PI
-#' apply(predsPI[,], 1, FUN=quantile, na.rm=T, probs=0.95)->preds_$upr_PI
+#' apply(predsCI[,], 1, FUN=quantile, na.rm=TRUE, probs=0.05)->preds_$lwr
+#' apply(predsCI[,], 1, FUN=quantile, na.rm=TRUE, probs=0.95)->preds_$upr
+#' apply(predsPI[,], 1, FUN=quantile, na.rm=TRUE, probs=0.05)->preds_$lwr_PI
+#' apply(predsPI[,], 1, FUN=quantile, na.rm=TRUE, probs=0.95)->preds_$upr_PI
 #' }
 #' lines(preds_$lwr_PI~preds_$x, lty=2,col=add.alpha("black"))
 #' lines(preds_$upr_PI~preds_$x, lty=2,col=add.alpha("black"))
-#' ebar(preds_,polygon=T,alpha=0.2)
+#' ebar(preds_,polygon=TRUE,alpha=0.2)
 
 ##
-boot_cilm<-function(x,y,data=NULL, reps=1000,range=NULL,steps=101,xout=NULL,quantiles=c(0.05,0.95),level=0.9, plot=T, interval="confidence",...){
+boot_cilm<-function(x,y,data=NULL, reps=1000,range=NULL,steps=101,xout=NULL,quantiles=c(0.05,0.95),level=0.9, plot=TRUE, interval="confidence",...){
 
 if(is.null(range) & is.null(xout)) range<-par("usr")[1:2] #if range and xout are both null, use current plotting device for range
 
@@ -78,7 +78,7 @@ out$lms<-list()
 
 ##loop and sample
 for(i in 1:reps){
-sample(c(1:length(x)),replace=T)->ind
+sample(c(1:length(x)),replace=TRUE)->ind
 x[ind]->x_
 y[ind]->y_
 dat<-data.frame(x=x_,y=y_)
@@ -99,8 +99,8 @@ if(1==1){
 out$interval<-data.frame(x=xout)
 predict(out$lm, out$interval)->out$interval$fit
 
-apply(out$preds[,-1], 1, FUN=quantile, na.rm=T, probs=quantiles[1])->out$interval$lwr
-apply(out$preds[,-1], 1, FUN=quantile, na.rm=T, probs=quantiles[2])->out$interval$upr
+apply(out$preds[,-1], 1, FUN=quantile, na.rm=TRUE, probs=quantiles[1])->out$interval$lwr
+apply(out$preds[,-1], 1, FUN=quantile, na.rm=TRUE, probs=quantiles[2])->out$interval$upr
 
 if(plot){
 ebar(x=xout,lower=out$interval$lwr, upper=out$interval$upr, polygon=TRUE,...)

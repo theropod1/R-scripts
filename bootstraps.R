@@ -1,7 +1,36 @@
 ##README: various functions related to the estimation of non-parametric (e.g. bootstrap) confidence intervals or uncertainty measures
 
 ##function: bootCI() ##migrates to boot_cilm
+##function bootCI()
+#' basic bootstrap confidence interval 
+#'
+#' @param x univariate dataset for which to calculate CI
+#' @param fun function to apply across reps
+#' @param level desired confidence level
+#' @param reps number of bootstrap repetitions
+#' @param CI logical whether to return CI (otherwise all results are returned as a vector)
+#' @param wt optional vector of weights (defaults to equal weighting of all values in x), must be same length as x
+#' @param ... other arguments to pass on to fun
+#' @details computes a bootstrap confidence interval for the result of any function that can be applied to a resampling of x
+#' @return either a numeric of length 2 giving the confidence interval at the desired confidence level, or a numeric vector of length reps containing every individual result of fun
+#' @export bootCI
+##
+bootCI<-function(x,fun=NULL,level=0.9,reps=1000, CI=TRUE,wt=1,...){
+upr<-1-(1-level)/2
+lwr<-0+(1-level)/2
 
+if(length(wt)!=length(x)) rep(wt,length(x))[1:length(x)]->wt
+
+x[which(!is.na(x))]->x
+
+if(!is.null(fun)) replicate(reps,fun(sample(x,length(x),replace=TRUE,prob=wt),...))->x_
+if(is.null(fun)) replicate(reps,sample(x,length(x),replace=TRUE,prob=wt),...)->x_
+
+if(CI==FALSE){return(x_)
+}else{quantile(x_,c(lwr,upr))->ci
+return(ci)}
+}
+##
 ##
 
 ##function: p_bootCI()
