@@ -1,7 +1,9 @@
 #vertebra scaling following Gottfried et al. 1996, wintner and cliff 1999. Estimates TL (m) from max. vertebral width (mm), or the reverse
 shark.vert<-function(x,reverse=FALSE, method=ifelse(length(x)>1,"carcharodon1","all")){
 
-if(method=="all") method<-c("carcharodon1","carcharodon2","carcharodon3","isurus1","lamna1")
+if(is.numeric(method)) method<-c("carcharodon1","carcharodon2","carcharodon3","isurus1","lamna1")[method]
+else if(method=="all") method<-c("carcharodon1","carcharodon2","carcharodon3","isurus1","lamna1")
+
 if(reverse==TRUE | reverse=="r") TRUE->reverse
 
 out<-numeric() #empty object to append to
