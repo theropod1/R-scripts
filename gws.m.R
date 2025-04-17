@@ -20,13 +20,14 @@ if(method=="sd"){out<-apply(masses[,2:7],1,sd)}
 if(method=="all"){masses$mean<-apply(masses[,2:7],1,mean)
 masses$SD<-apply(masses[,2:7],1,sd)
 out<-masses}
+if(method=="legend") out<-c('Gottfried et al. 1996, n=174', 'Kohler et al. 1995, n FL= 112, n mass=125', 'Casey and Pratt, 1985 n=200', 'Mollet and Cailliet 1996, n=327', 'Tricas and McCosker 1984, n=127', 'McClain et al. 2015, n=90')
 
-if(method=="g1996"){out<-masses[,2]}#for gottfried et al. 1996 n=174
-if(method=="k1995"){out<-masses[,3]}#for kohler et al. 1995 nforkl= 112, nmass=125
-if(method=="c1985"){out<-masses[,4]}#for casey and pratt 1985 n=200
-if(method=="m1996"){out<-masses[,5]}#for mollet and cailliet 1996 n=327
-if(method=="t1984"){out<-masses[,6]}#for Tricas and McCosker 1984 n=127
-if(method=="m2015"){out<-masses[,7]}#for Mcclain et al. 2015 n=90
+if(method%in%c("g1996",1)){out<-masses[,2]}#for gottfried et al. 1996 n=174
+if(method%in%c("k1995",2)){out<-masses[,3]}#for kohler et al. 1995 nforkl= 112, nmass=125
+if(method%in%c("c1985",3)){out<-masses[,4]}#for casey and pratt 1985 n=200
+if(method%in%c("m1996",4)){out<-masses[,5]}#for mollet and cailliet 1996 n=327
+if(method%in%c("t1984",5)){out<-masses[,6]}#for Tricas and McCosker 1984 n=127
+if(method%in%c("m2015",6)){out<-masses[,7]}#for Mcclain et al. 2015 n=90
 
 ##references:
 #Casey, J.G. and Pratt, H.L. 1985. Distribution of the White Shark,  Carcharodon carcharias, in the Western North Atlantic. Memoirs of the Southern California Academy of Sciences 9: 2–14.
@@ -44,13 +45,8 @@ gws.m(5)#gives the mean mass estimate for a TL of 5 m
 gws.m(20, "c1985")#gives the mass estimate for a TL of 20 m based on only the regression of Casey and Pratt 1985
 gws.m(20, "all")#gives the mass estimate for a TL of 20 m based on each regression equation
 
-
-
 gws.pcl<-function(tl){0.7845*tl^1.0382}#precaudal length function (power curve from Kohler et al. 1995, both measurements in metres)
-
-
 gws.fl<-function(tl){0.9442*(100*tl)-5.74411}#fork length function (power curve from Mollet & Cailliet 1996, both measurements in metres)
-
 
 mako.m<-function(tl_m=14){
 fl<- 0.9286*tl_m*100-1.7101#I. oxyrinchus, Kohler et al. 1995, n forklength= 199
@@ -59,7 +55,6 @@ out<- 5.2432e-6*fl^3.1407#nmass=2081
 
 return(out)
 }
-
 
 lamna.m<-function(tl_m=14){
 fl<-0.8971*tl_m*100+1.7939#Lamna nasus, Kohler et al. 1995, nforkl=13
