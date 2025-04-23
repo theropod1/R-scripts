@@ -1,10 +1,10 @@
 #vertebra scaling following Gottfried et al. 1996, wintner and cliff 1999. Estimates TL (m) from max. vertebral width (mm), or the reverse
 shark.vert<-function(x,reverse=FALSE, method=ifelse(length(x)>1,"carcharodon1","all")){
+ms<-c("carcharodon1","carcharodon2","carcharodon3","isurus1","lamna1")
+if(is.numeric(method)) method<-ms[method]
+else if(method=="all") method<-ms
 
-if(is.numeric(method)) method<-c("carcharodon1","carcharodon2","carcharodon3","isurus1","lamna1")[method]
-else if(method=="all") method<-c("carcharodon1","carcharodon2","carcharodon3","isurus1","lamna1")
-
-if(reverse==TRUE | reverse=="r") TRUE->reverse
+if(reverse=="r") TRUE->reverse
 
 out<-numeric() #empty object to append to
 
@@ -22,9 +22,9 @@ else c(out,Gottfried_et_al_1996 = 0.22+0.058*x)->out
 #reference: p. 60 in Gottfried, M.D., Compagno, L.J., and Bowman. 1996. Size and skeletal anatomy of the giant" megatooth" shark  Carcharodon megalodon, p. 55---66. In Klimley, A.P. and Ainley, D.G. (eds.), Great White Sharks: the biology of Carcharodon carcharias. Academic Press, San Diego. 
 }
 
-if("natansonetal2015" %in% method | "carcharodon3" %in% method){ ##use natanson et al. regression for Carcharodon
-if(reverse)  c(out,Natanson_etal_2015 = ((0.9442*x*100-5.7441)-35.6)/10.8*2)->out
-else c(out,Natanson_etal_2015 = ((10.8*x/2+35.6)+5.7441)/0.9442/100)->out
+if("natansonskomal2015" %in% method | "natansonetal2015" %in% method | "carcharodon3" %in% method){ ##use natanson et al. regression for Carcharodon
+if(reverse)  c(out,Natanson_Skomal_2015 = ((0.9442*x*100-5.7441)-35.6)/10.8*2)->out
+else c(out,Natanson_Skomal_2015 = ((10.8*x/2+35.6)+5.7441)/0.9442/100)->out
 #reference: Figure 1 in Natanson, L.J. and Skomal, G.B. 2015. Age and growth of the white shark, Carcharodon carcharias, in the western North Atlantic Ocean. Marine and Freshwater Research: 66:387. https://doi.org/10.1071/MF14127.
 #TL from Fork length:  FL=0.9442*TL-5.7441 -> (FL+5.7441)/0.9442=TL
 #Kohler, N.E., Casey, J.G., and Turner, P.A. 1996. Length-length and length-weight relationships for 13 shark species from the western North Atlantic. Fishery Bulletin: 93:412---418.
