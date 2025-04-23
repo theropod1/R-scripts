@@ -114,7 +114,7 @@ preds$fit-qt(level,preds$df)*preds$se.fit->lwr
 preds$fit+qt(level,preds$df)*preds$se.fit->upr
 
 if(interval=="prediction"){
-message("Prediction interval currently unavailable for loess model, plotting confidence interval instead.")
+message("Prediction interval unavailable for loess model, plotting confidence interval instead.")
 }
 }else{#assume lm()
 
@@ -135,10 +135,11 @@ preds[,3]->upr
 }#end estimation
 
 #throw out NA values
-keep<-which(!is.na(point) & !is.na(lwr) & !is.na(upr))
+keep<-which(!is.na(point))# & !is.na(lwr) & !is.na(upr))
+
 if(!is.null(limits)){
 if(is.numeric(limits) & length(limits)>1){
-keep<-which(!is.na(point) & !is.na(lwr) & !is.na(upr) & x>=min(limits) & x<=max(limits))
+keep<-which(!is.na(point) & x>=min(limits) & x<=max(limits))# & !is.na(lwr) & !is.na(upr) )
 }
 }
 point[keep]->point
@@ -151,12 +152,12 @@ df[keep,]->df
 #print(tail(data.frame(df,x,point,lwr,upr)))
 
 #add polygon (if alpha is not 0 and fill is not NA
-if(alpha>0 & !is.na(fill)){
+if(alpha>0 & !is.na(fill) & !any(is.na(lwr))){
 polygon(c(x,rev(x)), c(lwr,rev(upr)), col=add.alpha(fill,alpha),border=NA)
 }
 
 #add top and bottom lines (if border is not NA)
-if(!is.na(border)){
+if(!is.na(border) & !any(is.na(lwr))){
 lines(lwr~x,col=border, lty=lt.border,lwd=lw.border)
 lines(upr~x,col=border, lty=lt.border,lwd=lw.border)
 }

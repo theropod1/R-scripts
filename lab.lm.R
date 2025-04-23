@@ -115,15 +115,20 @@ bquote(RMSE == .(sqrt(mean(residuals(lm)^2))))->rmse ##XXX TODO instead of log-r
 
 if(exists("modelp")){
 modelp(lm)->pval
-if(pval==0){
+
+if(is.na(pval)){
+pval<-"NA"
+}else if(pval==0){
 pval<-"<2.2E-16"
 }
+
 if(is.numeric(pval)){
 bquote(p == .(signif(pval,digits)))->mp}else{
-bquote(p == .(pval,digits))->mp
+bquote(p == .(pval))->mp
 }
 
 }
+
 message("inserting label at x = ", xtxt, ", y = ",ytxt)
 
 text(x=xtxt,y=ytxt, adj=adj, eq,...)
