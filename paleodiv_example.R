@@ -1,4 +1,3 @@
-source("~/Documents/research_projects/scripts/functions.r")
 library(paleoDiv)
 library(strap)
 library(paleotree)
@@ -29,8 +28,7 @@ strap::DatePhylo(tree0, ages, rlen = 4, method = "equal", add.terminal = FALSE)-
 paleotree::minBranchLength(tree0,mbl=2)->tree0 # making short branches longer for visibility (optional)
 
 ##plot headers
-#svg("amphibian_phylo.svg",width=210/25.4/1.5*1.3, height=297/25.4/1.5) # dimensions suitable for approx. half a slide
-#pdf("amphibian_phylo_a4.pdf",width=210/25.4, height=297/25.4) #for a4 page size
+#pdf("phylo_a4.pdf",width=210/25.4, height=297/25.4) #for a4 page size
 
 ##plotting
 phylo.spindles(tree0,occ=treedata0,fill=add.alpha(rainbow(length(tree0$tip.label)),0.5),col=darken(rainbow(length(tree0$tip.label)),-0.2),ages=ages,txt.y=0.5, dscale=0.010,xlim=c(200,-50),axis=F,txt.x=ages[,2]-1,tbmar=c(0.6,0.2),labels=T)
