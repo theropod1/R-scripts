@@ -2,7 +2,7 @@
 #' search for multiple values and return a vector of entries matching them
 #' @param matches vector of search patterns
 #' @param vector vector in which to search
-#' @return indices of entried in vector that match one or more patterns in matches
+#' @return indices of entries in vector that match one or more patterns in matches
 #' @export multigrep
 multigrep<-function(matches, vector){
 out<-numeric()
@@ -15,11 +15,14 @@ return(out)
 #' replace several values of x with replacements
 #' @param x vector in which to perform substitution
 #' @param values vector of values to substitute
-#' @param replacements vector of substitutions to replace values with
+#' @param replacements vector of substitutions to replace values with (defaults to NA)
 #' @return vector of same length as x with values replaced by replacements
 #' @export freplace
 
-freplace<-function(x,values,replacements){
+freplace<-function(x,values,replacements=NA){
+
+if(length(values)>length(replacements)) rep(replacements,length(values))[1:length(values)]
+
 for(i in 1:length(x)){if(x[i]%in%values){
 for(j in 1:length(values)){if(x[i]==values[j]) x[i]<-replacements[j]}
 	}}
@@ -27,8 +30,64 @@ return(x)
 }
 ##
 
-##M()
 
+## multilgrep()
+#' search for multiple values and return logical vector for presence or absence of the different entries in pattern
+#' @param matches vector of search patterns
+#' @param vector vector in which to search
+#' @return indices of entried in vector that match one or more patterns in matches
+#' @export multilgrep
+multilgrep<-function(matches, vector){
+out<-logical()
+for(i in matches){
+out<-c(out, ifelse(any(grepl(i,vector)),TRUE,FALSE))
+}
+return(out)
+}
+##
+
+##freplace()
+#' replace several values of x with replacements
+#' @param x vector in which to perform substitution
+#' @param values vector of values to substitute
+#' @param replacements vector of substitutions to replace values with (defaults to NA)
+#' @return vector of same length as x with values replaced by replacements
+#' @export freplace
+
+freplace<-function(x,values,replacements=NA){
+
+if(length(values)>length(replacements)) rep(replacements,length(values))[1:length(values)]
+
+for(i in 1:length(x)){if(x[i]%in%values){
+for(j in 1:length(values)){if(x[i]==values[j]) x[i]<-replacements[j]}
+	}}
+return(x)
+}
+##
+
+##multigsub()
+#' replace several character strings in a vector with replacements
+#' @param x vector in which to perform substitution
+#' @param patterns vector of patterns to substitute
+#' @param replacements vector of substitutions to replace values with (defaults to an empty string, i.e. deleting characters in question)
+#' @param ... additional arguments to pass on to gsub
+#' @return vector of same length as x with strings in values replaced by replacements
+#' @export multigsub
+
+multigsub<-function(x,patterns,replacements="",...){
+
+if(length(patterns)>length(replacements)) rep(replacements,length(patterns))[1:length(patterns)]->replacements
+
+for(j in 1:length(patterns)) x<-gsub(patterns[j],replacements[j],x,...)
+
+return(x)
+
+}
+##
+
+
+
+##M()
 #' Calculate a na-removing mean of any given number of values
 #' @param ... numeric arguments to pass on to mean(c(...))
 #' @return single numeric with mean of numbers given in ...
@@ -46,3 +105,29 @@ M<-function(...) mean(c(...),na.rm=TRUE)#shortcut for mean
 
 AR<-function() par("pin")[1]/diff(par("usr")[1:2])/(par("pin")[2]/diff(par("usr")[3:4]))
 ##
+
+##NNA()
+#' remove NA values from a vector
+#' @param x vector from which NAs are to be removed
+#' @return a vector consisting of all elements of x in the same order, except values that are NA
+#' @export NNA
+NNA<-function(x){ x[!is.na(x)]}
+
+
+##same()
+#' test if any elements in a vector of two or more entries are identical
+#' @param x vector on which to perform test
+#' @return a logical indicating whether any elements of x are identical
+#' @export same
+same<-function(x){
+if(length(unique(x))==1) return(TRUE)
+else return(FALSE)
+}
+
+##same()
+#' test if x lies between a set of values
+#' @param x single numeric
+#' @param between numeric vector to compare x to
+#' @return a logical indicating whether x lies within the range of between
+#' @export between
+between<-function(x,between) x<=max(between) & x>=min(between)
