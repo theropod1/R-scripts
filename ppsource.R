@@ -54,7 +54,7 @@ out_<-c(out_,author_)
 
 pout<-paste0(listout(out_,quotes=FALSE, sep=sep),". Licenses: ", listout(unique(out$license),quotes=FALSE, sep=sep))
 
-print(pout)
+#print(pout)
 
 c(out_,"Licenses: ",unique(out$license))->out_
 if(return=="raw"){invisible(out)

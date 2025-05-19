@@ -134,7 +134,7 @@ upr<-1-(1-level)/2
 lwr<-0+(1-level)/2
 
 if(length(wt)!=length(x)) rep(wt,length(x))[1:length(x)]->wt
-
+wt[which(!is.na(x))]->wt
 x[which(!is.na(x))]->x
 
 if(!is.null(fun)) replicate(reps,fun(sample(x,length(x),replace=TRUE,prob=wt),...))->x_

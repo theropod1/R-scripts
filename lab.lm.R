@@ -1,3 +1,30 @@
+##function: modelp() 
+#' extract the p value for a linear model
+#' @param x object of class lm to extract p value from
+#' @param signif number of significant digits to which to round
+#' @return a numeric containing the p value for the model
+#' @importFrom stats pf
+#' @export modelp
+#' @examples
+#' a<-rnorm(20)
+#' b<-rnorm(n=20, mean=a, sd=0.1)
+#' modelp(lm(b~a))
+
+modelp<-function(x, signif=10){
+summary(x)$fstatistic->f
+
+if(!is.null(signif)){
+signif(1-pf(f[1],f[2],f[3]),signif)->pval
+#if(pval==0){return(paste0("<0.",paste(rep(0,signif-2), collapse=""),1))}else{return(pval)}
+}else{
+1-pf(f[1],f[2],f[3])->pval
+}
+#if(pf(f[1],f[2],f[3])==0){return(2.2e-16)}else{
+return(pval)#}
+
+}
+##
+
  
 ##function lab.lm()
 #' Plot a linear model with confidence or prediction interval
@@ -138,4 +165,65 @@ if(!RMSE) text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), rsq,...)##plot R²
 if(RMSE) text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), rmse,...)##plot root mean square error
 }
 
+}##
+
+
+#' Calculate the percent prediction error of a model or two sets of data
+#' @param yfitted Either a model of class "lm", or a numeric vector with fitted values to be compared to observed values
+#' @param yobserved observed y values. If NULL, observed values are calculated based on fitted and residual values from supplied model
+#' @param testingx predictor variables for testing data (if desired) as either a numeric vector or data.frame containing data for which to make predictions
+#' @param predvars names of predictor variables, if not already present in testingx
+#' @param verbose logical indicating whether to return mean PPE (if FALSE, default) or dataframe with all fitted and predicted values
+#' @param transformation Transformation to use on yfitted and yobserved
+#' @return The mean PPE or a data.frame() containing all fitted and observed values and their respective PPEs
+#' @export PPE
+#' @examples
+#' set.seed(42)
+#' rnorm(20,mean=10, sd=2)->x
+#' rnorm(n=20,mean=x, sd=1)->y
+#' lm(y~x)->m
+#' plot(y~x)
+#' ci.lm(m)
+#' PPE(m)
+
+PPE<-function(yfitted=NULL,yobserved=NULL, testingx=NULL,predvars=NULL,verbose=FALSE, transformation=NULL){
+yfitted->yfit_backup
+
+if(inherits(yfitted,"lm")){
+
+if(is.null(testingx)){ #run on original data
+yfitted$fitted.values->yfitted
+
+}else{ #run on testing data
+
+if(is.null(predvars)) names(yfitted$coefficients)->predvars
+if("(Intercept)" %in% predvars) predvars<-predvars[which(predvars!="(Intercept)")]
+if(is.data.frame(testingx)){
+if(any(!(predvars%in%colnames(testingx)))) colnames(testingx)<-predvars[1:ncol(testingx)]
+}else if(is.numeric(testingx)){
+data.frame(x=testingx)->testingx
+colnames(testingx)<-predvars
+}else{stop("testingx must be NULL, dataframe or numeric")}
+
+predict(yfitted, testingx)->yfitted
+
 }
+
+yfit_backup$fitted.values+yfit_backup$residuals->yobserved
+}
+
+#PPE = (Predicted Value - Actual Value) / Actual Value| * 100
+
+if(!is.null(transformation)){
+if(is.function(transformation)){
+yfitted <- transformation(yfitted)
+yobserved <- transformation(yobserved)
+}}
+
+(yfitted-yobserved)/yobserved*100 -> PPE
+abs(PPE) -> PPE
+
+if(verbose){return(data.frame(yfitted,yobserved,PPE))}else{
+return(mean(PPE))}
+
+}##
