@@ -12,7 +12,7 @@ paste0(x_,sep,x[i])->x_
 paste0(x_,sep, "'",x[i],"'")->x_}
 }}
 
-if(quotes==F | is.numeric(x)){
+if(quotes==FALSE | is.numeric(x)){
 gsub("'","",x_)->x_
 #gsub(" ","",x_)->x_
 }

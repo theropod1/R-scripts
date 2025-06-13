@@ -40,7 +40,7 @@ if(length(North)==1){
 lat<-North
 }else{
 lat<-South
-lngneg<-TRUE
+latneg<-TRUE
 }
 }#
 
