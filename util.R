@@ -46,25 +46,6 @@ return(out)
 }
 ##
 
-##freplace()
-#' replace several values of x with replacements
-#' @param x vector in which to perform substitution
-#' @param values vector of values to substitute
-#' @param replacements vector of substitutions to replace values with (defaults to NA)
-#' @return vector of same length as x with values replaced by replacements
-#' @export freplace
-
-freplace<-function(x,values,replacements=NA){
-
-if(length(values)>length(replacements)) rep(replacements,length(values))[1:length(values)]
-
-for(i in 1:length(x)){if(x[i]%in%values){
-for(j in 1:length(values)){if(x[i]==values[j]) x[i]<-replacements[j]}
-	}}
-return(x)
-}
-##
-
 ##multigsub()
 #' replace several character strings in a vector with replacements
 #' @param x vector in which to perform substitution

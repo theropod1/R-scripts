@@ -10,7 +10,7 @@
 unify<-function(cases0,cases1,means=FALSE){
 for(i in 1:length(cases0)){
 if(is.na(cases0[i])) cases0[i]<-cases1[i]
-if(means==TRUE) cases0[i]<-mean(cases0[i],cases1[i],na.rm=TRUE)
+if(means==TRUE) cases0[i]<-mean(c(cases0[i],cases1[i]),na.rm=TRUE)
 }
 return(cases0)
 }
