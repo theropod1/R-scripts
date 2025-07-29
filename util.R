@@ -112,3 +112,17 @@ else return(FALSE)
 #' @return a logical indicating whether x lies within the range of between
 #' @export between
 between<-function(x,between) x<=max(between) & x>=min(between)
+
+##fls()
+#' return a vector with file names in current working directory
+#' @param pattern optional pattern to filter for in file names that are returned
+#' @param ... options to pass on to grep for filtering
+#' @return a character vector of file names that macth pattern
+#' @export fls
+fls<-function(pattern=NULL,...){
+list.files()->l
+if(!is.null(pattern)) return(l[grep(pattern,l,...)])
+if(is.null(pattern)) return(l)
+
+}
+

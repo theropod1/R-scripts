@@ -11,7 +11,12 @@
 #' @return either a data.frame with estimated upper and lower confidence and prediction bands (if x_!=NULL), or a list() object containing all the information necessary for the parametric construction of confidence intervals: the model formula, standard error of the estimate, critical t value at the chosen confidence level and degrees of freedom of the model, mean and variance of the independent variable, sample size and the complete formulas for the confidence and prediction intervals
 
 
-ols.CI<-function(x,y,x_=NULL,level=0.9,digits=NULL){
+ols.CI<-function(x,y=NULL,x_=NULL,level=0.9,digits=NULL){
+if(inherits(x,"lm")){
+y<-x$model[,1]
+x<-x$model[,2]
+}
+
 lm(y~x)->model
 
 t_crit<-qt(1-((1-level)/2),summary(model)$df[2]) # critical t value
@@ -60,3 +65,59 @@ return(out)
 }
 
 }
+
+
+
+#' output the formula for the parametric confidence and prediction intervals of a linear model
+#'
+#' @param y independent variable, can be a model object
+#' @param x 
+#' @param interval "both"
+#' @param cl confidence level, default 0.9
+#' @return a character vector containing the formulas for the confidence and prediction intervals
+#' @export cipi_form
+
+cipi_form<-function(x,y=NULL,interval="both", cl=0.9,transformation="n"){
+if(inherits(x,"lm")){
+y<-x$model[,1]
+x<-x$model[,2]
+}
+
+lm(y~x)->model
+##CI and PI
+est_p<-paste(coef(model)[1],"+ x *",coef(model)[2]) # point estimate
+if(transformation=="log") est_p<-paste(coef(model)[1],"+ log(x) *",coef(model)[2]) # point estimate
+
+
+t_crit_upr<-qt(1-(1-cl)/2,summary(model)$df[2]) # critical t value
+
+see<-summary(model)$sigma #residual standard error (SEE)
+
+mean(x)->xmean
+var(x)->xvar
+length(resid(model))->n
+
+if(transformation!="log"){
+etc_CI<-paste0("(1/",n,"+(x-",xmean,")^2/((",n,"-1)*",xvar,"))^0.5")
+etc_PI<-paste0("(1+1/",n,"+(x-",xmean,")^2/((",n,"-1)*",xvar,"))^0.5")
+}else{
+etc_CI<-paste0("(1/",n,"+(log(x)-",xmean,")^2/((",n,"-1)*",xvar,"))^0.5")
+etc_PI<-paste0("(1+1/",n,"+(log(x)-",xmean,")^2/((",n,"-1)*",xvar,"))^0.5")
+}
+
+
+
+
+paste0(est_p," ± ",t_crit_upr," * ", see, " * ", etc_CI)->CI
+paste0(est_p," ± ",t_crit_upr," * ", see, " * ", etc_PI)->PI
+
+if(transformation=="log"){
+paste("exp(",CI,")")->CI
+paste("exp(",PI,")")->PI
+}
+c(CI,PI)->out
+names(out)<-c(paste0("CI",cl),paste0("PI",cl))
+return(out)
+
+}
+
