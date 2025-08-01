@@ -12,6 +12,7 @@
 
 modelp<-function(x, signif=10){
 summary(x)$fstatistic->f
+if(is.null(f)){return(NA)}else{
 
 if(!is.null(signif)){
 signif(1-pf(f[1],f[2],f[3]),signif)->pval
@@ -21,7 +22,7 @@ signif(1-pf(f[1],f[2],f[3]),signif)->pval
 }
 #if(pf(f[1],f[2],f[3])==0){return(2.2e-16)}else{
 return(pval)#}
-
+}
 }
 ##
 

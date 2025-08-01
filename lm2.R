@@ -4,11 +4,25 @@
 #' @param formula model formula
 #' @param data data for model
 #' @param v verbosity setting (logical)
-#' @param method method for fitting model, defaults to Impartial Least Squares or Covariance-Matrix-based Model II Regression sensu Tofallis 2023, alternative method "PCA" uses Principal Component–based Reduced Major Axis Regression that uses prcomp() to find slopes (for the bivariate case, both are identical and the slope is simply sign(cor/)
-#' @references Tofallis, C. 2023. Fitting an Equation to Data Impartially. Mathematics: 11:3957. https://doi.org/10.3390/math11183957.
-#' https://pjbartlein.github.io/GeogDataAnalysis/lec16.html
-#' @return a list() type object with the class "lm2" and containing the model parameters, fitted values, dataset, call and formula⎄
-#' @export predict.lm2
+#' @param method method for fitting model, defaults to Impartial Least Squares or Covariance-Matrix-based Model II Regression sensu Tofallis 2023, alternative method "PCA" uses Principal Component–based Reduced Major Axis Regression that uses prcomp() to find slopes (for the bivariate case, both are identical and the slope is simply \code{sign(cor())*sd(y)/sd(x)}
+#' @return An object of class \code{"lm2"} containing:
+#' \itemize{
+#'   \item \code{coefficients} — Model coefficients (intercept and slopes).
+#'   \item \code{residuals} — Residuals.
+#'   \item \code{fitted.values} — Fitted values.
+#'   \item \code{model} — Model frame.
+#'   \item \code{method} — Method used.
+#'   \item \code{formula} — Original model formula.
+#'   \item \code{transformations} — Transformation functions applied to predictors.
+#' }
+#'
+#' @references
+#' Tofallis, C. (2023). Fitting an Equation to Data Impartially.
+#' \emph{Mathematics}, 11(18), 3957. \doi{10.3390/math11183957}
+#'
+#' See also: \url{https://pjbartlein.github.io/GeogDataAnalysis/lec16.html}
+#'
+#' @export lm2
 #' @examples
 #' x<-rnorm(10)
 #' y<-rnorm(10,mean=x,sd=0.2)
@@ -16,15 +30,28 @@
 
 lm2 <- function(formula, data,v=FALSE, method="tofallis") {
   mf <- model.frame(formula, data)
+  mf<-mf[complete.cases(mf),]
+  
   y <- model.response(mf)
   X <- model.matrix(attr(mf, "terms"), data = mf)
   if(v) print(mf)
   if(v) print(X)
   X <- X[, -1, drop = FALSE]  # remove intercept column
-  if(v) print(x)
+  if(v) print(X)
   # Standard deviations for back-transform
   sy <- sd(y)
   sx <- apply(X, 2, sd)
+    if(v) cat(sy,sx)
+
+  if(ncol(X)==1){ #bivariate case
+  slopes<-sy/sx*sign(cor(as.numeric(X),y))
+  names(slopes) <- colnames(X)
+  intercept<-mean(y)-slopes*mean(as.numeric(X))
+  names(intercept)<-NULL
+  fitted <- intercept+slopes*as.numeric(X)
+  
+  method<-"bivariate RMA"
+  }else{
   
   if(method%in%c("PCA","pca","prcomp","princomp","PC","PC1")){
   # scale variables for PCA
@@ -47,7 +74,7 @@ lm2 <- function(formula, data,v=FALSE, method="tofallis") {
   
   # Predictions and residuals
   fitted <- intercept + yhat_no_int
-  }else{##WIP
+  }else{
   #Tofallis, C. 2023. Fitting an Equation to Data Impartially. Mathematics: 11:3957. https://doi.org/10.3390/math11183957.
   cbind(y,mf)->mf_
   cov(mf)->cov_mf_
@@ -59,6 +86,7 @@ lm2 <- function(formula, data,v=FALSE, method="tofallis") {
   
   fitted <- intercept + yhat_no_int
   }
+  }#end fitting stages
   
   residuals <- y - fitted
   
@@ -73,13 +101,15 @@ lm2 <- function(formula, data,v=FALSE, method="tofallis") {
     method = method,
     formula = formula
   )
-  
+
+  if(ncol(X)>1){#additional data for multivariate case
 if(method%in%c("PCA","pca","prcomp","princomp","PC","PC1")){
 fit$PCA<-pc
 fit$loadings<-loadings
 fit$slopes_std<-slopes_std
 }else{
 cov_mf_->fit$cov_matrix
+}
 }
   
   class(fit) <- c("lm2", "lm")
@@ -91,11 +121,12 @@ cov_mf_->fit$cov_matrix
 #' Predict method for lm2 objects output by lm2()
 #'
 #' @param model model object of class lm2, fitted using the lm2() function
-#' @param newdata New data for which to make predictions (if NULL, the training data of the model are used). transformations are not applied automatically
+#' @param newdata New data for which to make predictions (if NULL, the training data of the model are used). Transformations are not applied automatically unless autotransform==TRUE
+#' @param autotransform logical indicating whether to automatically transform the predictors according to the transformations used in the model formula
+#' @param retransform optional, function to apply to results of fitted values and confidence intervals. Defaults to identity function (unchanged).
 #' @param level 0.9 confidence level
 #' @param reps 1000 repetitions
-#' @param include.mean whether to include mean (main model) as first model in the bootstrap process (useful for comparisons)
-#' @param make.predictions
+#' @param bootstrap should predictions be bootstrapped to build confidence and prediction intervals (skip to make function run faster)
 #' @param ... other arguments to pass on to lm2
 #' @return a list() object containing bootstrapped models, coefficients, residuals, and predicted values for newdata, as well as confidence intervals for newdata and the model coefficients, and prediction intervals for newdata
 #' @export predict.lm2
@@ -111,94 +142,97 @@ cov_mf_->fit$cov_matrix
 #' ebar(lower=co$PI0.9[1,],upper=co$PI0.9[2,],x=co$newdata[,1],polygon=TRUE)
 #' abline(rmcf)
 
-predict.lm2<-function(model, newdata=NULL, level=0.9, reps=1000, include.mean=FALSE, make.predictions=TRUE,...){
-
-model$model->model_vars
+predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=200, v=FALSE,...){
+#preparatory steps
+model$model->transformed_vars
 model$formula->model_formula
-all.vars(model_formula)->colnames(model_vars)
-if(is.null(newdata)) reformulate(all.vars(model_formula)[-1], response = all.vars(model_formula)[1])->model_formula #XXX
+reformulate(all.vars(model_formula)[-1], response = all.vars(model_formula)[1])->model_formula_
+if(v) print(model_formula)
+if(v) print(model_formula_)
 
-if(is.null(newdata)) newdata<-model$model
+all.vars(model_formula)->raw_vars
+term_labels <- attr(model$terms, "term.labels")
 
-matrix(NA,nrow=reps, ncol=ncol(model_vars))->coefficients #determine number of variables/coefficients and number of reps
-colnames(coefficients)<-c("(intercept)",colnames(model$model)[-1])
+model_transformations <- setNames( #extract transformations applied to variables from model object
+  lapply(term_labels, function(lbl) {
+    expr <- parse(text = lbl)[[1]]
+    if (is.call(expr)) {
+      get(as.character(expr[[1]]), mode = "function", inherits = TRUE)
+    } else {
+      identity
+    }
+  }),
+  term_labels
+)
+
+##adjust newdata transformations and names
+if(!is.null(newdata)){#transform newdata
+if(!autotransform){
+as.data.frame(newdata[,names(model$coefficients)[-1]])->newdata
+}
+if(autotransform){
+as.data.frame(newdata[,raw_vars[-1]])->newdata
+for(i in 1:ncol(newdata)){newdata[,i]<-model_transformations[[i]](newdata[,i])}#apply transformation functions
+}
+
+}else{
+newdata<-as.data.frame(transformed_vars[,-1])
+}
+colnames(newdata)<-names(model$coefficients)[-1]
+if(v) print(head(newdata))
+
+##predict best-fit values
+fit<-numeric()
+for(i in 1:nrow(newdata)) fit[i]<-model$coefficients[1]+sum(model$coefficients[-1]*newdata[i,])
+
+##bootstrap for confidence and prediction intervals
+if(bootstrap){
+boot_coefs<-matrix(NA,nrow=reps, ncol=length(names(model$coefficients)))
+colnames(boot_coefs)<-c("(Intercept)",names(model$coefficients)[-1])
 randres<-numeric()
-rm.tmp<-list()
-for(i in 1:reps){
-sample(c(1:nrow(model_vars)), replace=TRUE)->indices
-#now fit lm2 on model_vars[indices] and save coefficients to matrix
-lm2(model$formula,data=model_vars[indices,],...)->rm.tmp[[i]]
-coef(rm.tmp[[i]])->coefficients[i,]
-sample(rm.tmp[[i]]$residuals,1)->randres[i]
+boot_models<-list()
+
+fittedCI<-matrix(NA,nrow=reps, ncol=nrow(newdata))
+fittedPI<-fittedCI
+
+for(i in 1:reps){#bootstrap repetitions
+if(v & i/50>0 & i%%50==0) cat("fitting and predicting for ", i, " in ", reps,"\n")
+sample(c(1:nrow(transformed_vars)), replace=TRUE)->indices
+transformed_vars[indices,]->training_input
+colnames(training_input)<-raw_vars
+#resampled model fitting
+lm2(model_formula_,data=training_input,...)->boot_models[[i]]
+boot_models[[i]]$indices<-indices
+boot_models[[i]]$coefficients->boot_coefs[i,]
+sample(boot_models[[i]]$residuals,1)->randres[i]
+
+for(j in 1:nrow(newdata)){#make predictions from bootstrapped model
+fittedCI[i,j]<-boot_coefs[i,1]+sum(newdata[j,]*boot_coefs[i,-1])
+fittedPI[i,j]<-boot_coefs[i,1]+sum(newdata[j,]*boot_coefs[i,-1])+randres[i]
 }
-if(include.mean){
-lm2(model$formula,data=model_vars,...)->rm.tmp[[1]] #optional: replace first value with the mean model for easier comparisons
-coef(rm.tmp[[1]])->coefficients[1,]
-sample(rm.tmp[[1]]$residuals,1)->randres[1]
 }
-numeric()->fitted
-matrix(ncol=nrow(newdata), nrow=reps)->fittedCI
-matrix(ncol=nrow(newdata), nrow=reps)->fittedPI
 
-as.data.frame(newdata[,colnames(coefficients)[-1]])->newdata
-colnames(newdata)<-colnames(coefficients)[-1]
-
-if(make.predictions){
-for(rep in 1:reps){
-for(i in 1:nrow(newdata)){
-lm2(model_formula,data=model_vars,...)->rm.tmp
-fitted[i]<-coef(rm.tmp)[1]+sum(newdata[i,]*coef(rm.tmp)[-1])
-fittedCI[rep,i]<-coefficients[rep,1]+sum(newdata[i,]*coefficients[rep,-1])
-fittedPI[rep,i]<-coefficients[rep,1]+sum(newdata[i,]*coefficients[rep,-1])+randres[rep]
-}}}
-
-list(fit=fitted,fitted_values_mean=fittedCI, fitted_values_observation=fittedCI+randres,coefficients=coefficients,random_residual=randres, models=rm.tmp,newdata=newdata)->out
-
+#construct confidence intervals:
 ci<-c((1-level)/2,level+(1-level)/2)
-apply(X=out$fitted_values_mean,MAR=2,FUN=quantile,probs=ci)->out[[paste0("CI",level)]]
-apply(X=out$fitted_values_observation,MAR=2,FUN=quantile,probs=ci)->out[[paste0("PI",level)]]
+apply(X=fittedCI,MAR=2,FUN=quantile,probs=ci)->CI
+apply(X=fittedPI,MAR=2,FUN=quantile,probs=ci)->PI
 
-out[[paste0("Coefficient_CIs_",level)]]<-apply(X=out$coefficients,MAR=2,FUN=quantile,probs=ci)
-
-return(out)
-}##
-
-
-##summary.lm2
-#' Summary method for lm2 objects output by lm2()
-#'
-#' @param model lm2-class model
-#' @export summary.lm2
-#' @method summary lm2
-#' @importFrom base summary
-#' @examples
-#' 
-
-
-summary.lm2<-function(model){
-list()->out
-out$call<-model$call
-out$coefficients<-model$coefficients
-1-var(model$residuals)/var(model$model[,1])->out$r.squared
-out$residuals<-model$residuals
-out$fitted.values<-model$fitted.values
-class(out)<-c("summary_lm2")
-return(out)
-}##
-
-##print.summary_lm2
-#' Print method for summary_lm2 objects output by summary.lm2()
-#'
-#' @param model_summary summary_lm2-class model
-#' @export print.summary_lm2
-#' @method print summary_lm2
-#' @importFrom base summary
-#' @examples
-print.summary_lm2<-function(model_summary){
-print(model_summary$call)
-cat("\nCoefficients:\n")
-print(model_summary$coefficients)
-cat("\nmodel_summary$r.squared =",model_summary$r.squared,"\n")
-cat("\nAll contents:\n")
-print(paste0(substitute(model_summary),"$",names(model_summary)))
+fit<-data.frame(fit=fit,lwr_CI=CI[1,],upr_CI=CI[2,],lwr_PI=PI[1,],upr_PI=PI[2,])
+retransform(fit)->fit
 }
+
+list(newdata=newdata,model_transformations=model_transformations)->out
+if(bootstrap){
+out$boot_models<-boot_models
+out$boot_coefficients<-boot_coefs
+out$random_residual<-randres
+out$fittedCI<-fittedCI
+out$fittedPI<-fittedPI
+#out$CI<-CI
+#out$PI<-PI
+}
+out$fit<-fit
+class(out)<-c("preds.lm2")
+
+return(out)
+}##
