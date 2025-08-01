@@ -5,6 +5,7 @@
 #' @param data data for model
 #' @param v verbosity setting (logical)
 #' @param method method for fitting model, defaults to Impartial Least Squares or Covariance-Matrix-based Model II Regression sensu Tofallis 2023, alternative method "PCA" uses Principal Component–based Reduced Major Axis Regression that uses prcomp() to find slopes (for the bivariate case, both are identical and the slope is simply \code{sign(cor())*sd(y)/sd(x)}
+#' @param w (optional) vector of weights, if model should be weighed (defaults to 1, i.e. equal weighting. Currently only works for bivariate model.
 #' @return An object of class \code{"lm2"} containing:
 #' \itemize{
 #'   \item \code{coefficients} — Model coefficients (intercept and slopes).
@@ -28,8 +29,12 @@
 #' y<-rnorm(10,mean=x,sd=0.2)
 #' lm2(y~x,data=data.frame(x,y))->rmcf
 
-lm2 <- function(formula, data,v=FALSE, method="tofallis") {
+lm2 <- function(formula, data,v=FALSE, method="tofallis",w=1) {
+  
+  if(length(w)!=nrow(data)) rep(w,nrow(data))[1:nrow(data)]->w
+  
   mf <- model.frame(formula, data)
+  w<-w[complete.cases(mf)]
   mf<-mf[complete.cases(mf),]
   
   y <- model.response(mf)
@@ -44,6 +49,9 @@ lm2 <- function(formula, data,v=FALSE, method="tofallis") {
     if(v) cat(sy,sx)
 
   if(ncol(X)==1){ #bivariate case
+  sy <- wsd(y,w)
+  sx <- wsd(as.numeric(X),w)
+  
   slopes<-sy/sx*sign(cor(as.numeric(X),y))
   names(slopes) <- colnames(X)
   intercept<-mean(y)-slopes*mean(as.numeric(X))
@@ -99,7 +107,8 @@ lm2 <- function(formula, data,v=FALSE, method="tofallis") {
     model = mf,
     xlevels = .getXlevels(terms(mf), mf),
     method = method,
-    formula = formula
+    formula = formula,
+    weights = w
   )
 
   if(ncol(X)>1){#additional data for multivariate case
@@ -142,7 +151,7 @@ cov_mf_->fit$cov_matrix
 #' ebar(lower=co$PI0.9[1,],upper=co$PI0.9[2,],x=co$newdata[,1],polygon=TRUE)
 #' abline(rmcf)
 
-predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=200, v=FALSE,...){
+predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=1000, v=FALSE,...){
 #preparatory steps
 model$model->transformed_vars
 model$formula->model_formula
@@ -200,8 +209,11 @@ if(v & i/50>0 & i%%50==0) cat("fitting and predicting for ", i, " in ", reps,"\n
 sample(c(1:nrow(transformed_vars)), replace=TRUE)->indices
 transformed_vars[indices,]->training_input
 colnames(training_input)<-raw_vars
+if("weights" %in% names(model)){
+w<-model$weights[indices]
+}else{w<-1}
 #resampled model fitting
-lm2(model_formula_,data=training_input,...)->boot_models[[i]]
+lm2(model_formula_,data=training_input,w=w,...)->boot_models[[i]]
 boot_models[[i]]$indices<-indices
 boot_models[[i]]$coefficients->boot_coefs[i,]
 sample(boot_models[[i]]$residuals,1)->randres[i]
@@ -236,3 +248,76 @@ class(out)<-c("preds.lm2")
 
 return(out)
 }##
+
+
+## function wsd()
+#' compute the weighted sample standard deviation or variance
+#' @param x vector of values for which to compute weighted parameter
+#' @param w vector of weights
+#' @param na.rm default TRUE
+#' @export wsd
+#' @return the weighted standard deviation (or variance, or mean)
+
+wsd <- function(x, w=rep(1,length(x)), na.rm=TRUE) {
+if(na.rm){which(!is.na(x) & !is.na(w))->indices
+x[indices]->x
+w[indices]->w}
+	wm <- sum(w * x) / sum(w) #wtd.mean
+	variance <- sum(w * (x - wm)^2) / (sum(w) - sum(w^2) / sum(w)) #wtd.var
+	sqrt(variance) #wtd.st
+}
+
+## function rsq()
+#' compute the weighted r.squared of a model
+#' @param model model for which r.squared should be calculated
+#' @param weighted logical indicating whether weights should be taken into account, if available in model$weights
+#' @export wsd
+#' @return the (weighted) r.squared of the model
+rsq<-function(model,weighted=TRUE){
+if("weights"%in%names(model) & weighted){
+1-wsd(model$residuals,model$weights)^2/wsd(model$model[,1],model$weights)^2
+}else{
+1-wsd(model$residuals)^2/wsd(model$model[,1])^2
+}
+}##
+
+
+##summary.lm2
+#' Summary method for lm2 objects output by lm2()
+#'
+#' @param model lm2-class model
+#' @export summary.lm2
+#' @method summary lm2
+#' @importFrom base summary
+#' @examples
+#' 
+
+summary.lm2<-function(model){
+list()->out
+out$call<-model$call
+out$coefficients<-model$coefficients
+
+rsq(model)->out$r.squared
+
+out$residuals<-model$residuals
+out$fitted.values<-model$fitted.values
+class(out)<-c("summary_lm2")
+return(out)
+}##
+
+##print.summary_lm2
+#' Print method for summary_lm2 objects output by summary.lm2()
+#'
+#' @param model_summary summary_lm2-class model
+#' @export print.summary_lm2
+#' @method print summary_lm2
+#' @importFrom base summary
+#' @examples
+print.summary_lm2<-function(model_summary){
+print(model_summary$call)
+cat("\nCoefficients:\n")
+print(model_summary$coefficients)
+cat("\nmodel_summary$r.squared =",model_summary$r.squared,"\n")
+cat("\nAll contents:\n")
+print(paste0(substitute(model_summary),"$",names(model_summary)))
+}
