@@ -1,3 +1,5 @@
+##functions for fitting and working with type II regression models
+
 ##lm2()
 #' Function for fitting linear model II regressions
 #'
@@ -49,12 +51,13 @@ lm2 <- function(formula, data,v=FALSE, method="tofallis",w=1) {
     if(v) cat(sy,sx)
 
   if(ncol(X)==1){ #bivariate case
-  sy <- wsd(y,w)
-  sx <- wsd(as.numeric(X),w)
-  
-  slopes<-sy/sx*sign(cor(as.numeric(X),y))
+  sy <- wsd(y,w=w)
+  sx <- wsd(as.numeric(X),w=w)
+  weights::wtd.cor(as.numeric(X),y,weight=w)[1]->r_pearson
+  slopes<-sy/sx*sign(r_pearson)
   names(slopes) <- colnames(X)
-  intercept<-mean(y)-slopes*mean(as.numeric(X))
+  
+  intercept<-weighted.mean(y,w=w)-slopes*weighted.mean(as.numeric(X),w=w)
   names(intercept)<-NULL
   fitted <- intercept+slopes*as.numeric(X)
   
@@ -282,6 +285,20 @@ if("weights"%in%names(model) & weighted){
 }##
 
 
+##WIP
+#' invert a lm2 class model to predict x from y
+#'
+#' @param model
+#' @param response
+#' @return An object of class lm2
+#  @method invert lm2
+
+invert.lm2<-function(model, response=2){
+#XXX
+}
+
+
+
 ##summary.lm2
 #' Summary method for lm2 objects output by lm2()
 #'
@@ -318,6 +335,9 @@ print(model_summary$call)
 cat("\nCoefficients:\n")
 print(model_summary$coefficients)
 cat("\nmodel_summary$r.squared =",model_summary$r.squared,"\n")
+
 cat("\nAll contents:\n")
 print(paste0(substitute(model_summary),"$",names(model_summary)))
 }
+
+
