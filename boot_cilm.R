@@ -56,17 +56,18 @@ boot_cilm<-function(x,y=NULL,data=NULL, reps=1000,range=NULL,steps=101,xout=NULL
 if(is.null(range) & is.null(xout)) range<-par("usr")[1:2] #if range and xout are both null, use current plotting device for range
 list()->out
 
+if(!is.null(data)){##pull variables from data if possible
+if(inherits(data, c("data.frame", "list"))) {
+  x <- data[[as.character(substitute(x))]]
+  y <- data[[as.character(substitute(y))]]
+}
+}
+
 if(inherits(x,"lm")){
 x$model[,1]->y
 x$model[,2]->x
 }
 
-if(!is.null(data)){##pull variables from data if possible
-if(inherits(data, c("data.frame", "list"))) {
-  x <- eval(substitute(x), data, parent.frame())
-  y <- eval(substitute(y), data, parent.frame())
-}
-}
 
 if(length(x)!=length(y)) stop("y and x not same length!")
 #prepare xout
@@ -87,6 +88,7 @@ for(i in 1:reps){
 sample(c(1:length(x)),replace=TRUE)->ind
 x[ind]->x_
 y[ind]->y_
+##XXX add weights option here
 dat<-data.frame(x=x_,y=y_)
 lm(y~x, data=dat)->lm_
 
