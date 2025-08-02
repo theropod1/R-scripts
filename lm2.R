@@ -250,22 +250,46 @@ class(out)<-c("preds_lm2")
 return(out)
 }##
 
+
+##numericify()
+#' make all columns of a data.frame that can be coerced to numeric numeric
+#' @param df an input data.frame
+#' @return a data.frame with columns coerced to numeric wherever possible
+#' @export numericify
+#' @examples
+#' 
+numericify <- function(df) {
+  df[] <- lapply(df, function(col) {
+    if (suppressWarnings(!any(is.na(as.numeric(as.character(col)))))) {
+      as.numeric(as.character(col))} else { col } } )
+  df }
+
+
 ##function confint.preds_lm2()
 #' Estimate parameter confidence intervals for preds_lm2 objects
 #' @param preds_lm2 an object of class preds_lm2, output of predict.lm2 with bootstrap=TRUE
 #' @param level desired confidence level
+#' @param p_null null hypothesis for two-sided test to determine parameter p values
+#' @return a list() object containing the call, confidence level, parameter confidence estimates, parameter p values, parameter standard deviations and number of bootstrap repetitions
 #' @export confint.preds_lm2
 #' @method confint lm2
 #' @importFrom base confint
 #' @examples
 #' 
-confint.preds_lm2<-function(preds_lm2, level=0.9){
+confint.preds_lm2<-function(preds_lm2, level=0.9, p_null=0){
 if("boot_coefficients"%in%names(preds_lm2)){
 c((1-level)/2,level+(1-level)/2)->ci
-apply(X=preds_lm2$boot_coefficients,2,FUN=quantile, probs=ci)->parameter_CI
-apply(X=preds_lm2$boot_coefficients,2,FUN=sd)->parameter_SD
 nrow(preds_lm2$boot_coefficients)->n_reps_bootstrap
-out<-list(call=match.call(),level=level, CIs=parameter_CI,SEs=parameter_SD,n_reps=n_reps_bootstrap)
+
+apply(X=preds_lm2$boot_coefficients,2,FUN=quantile, probs=ci)->parameter_CI
+
+p_values<-apply(preds_lm2$boot_coefficients,2,FUN=function(x) sum(x<=p_null)/n_reps_bootstrap)
+p_values<-ifelse(p_values>0.5,(1-p_values)*2,p_values*2)
+p_values<-ifelse(p_values<1/n_reps_bootstrap,paste0("<",1/n_reps_bootstrap),p_values)
+numericify(as.data.frame(t(data.frame(p_values))))->p_values
+
+apply(X=preds_lm2$boot_coefficients,2,FUN=sd)->parameter_SD
+out<-list(call=match.call(),level=level, CIs=parameter_CI,SEs=parameter_SD,p=p_values,p_null=p_null,n_reps=n_reps_bootstrap)
 
 }else{stop("You need to run predict.lm2() with bootstrap=TRUE!")}
 
