@@ -140,7 +140,7 @@ cov_mf_->fit$cov_matrix
 #' @param reps 1000 repetitions
 #' @param bootstrap should predictions be bootstrapped to build confidence and prediction intervals (skip to make function run faster)
 #' @param ... other arguments to pass on to lm2
-#' @return a list() object containing bootstrapped models, coefficients, residuals, and predicted values for newdata, as well as confidence intervals for newdata and the model coefficients, and prediction intervals for newdata
+#' @return a list() object containing the original model and predicted values for newdata, as well as confidence intervals for newdata and (if bootstrap==TRUE) the bootstrapped model coefficients, residuals and confidence and prediction intervals for newdata
 #' @export predict.lm2
 #' @method predict lm2
 #' @importFrom stats predict
@@ -236,22 +236,41 @@ fit<-data.frame(fit=fit,lwr_CI=CI[1,],upr_CI=CI[2,],lwr_PI=PI[1,],upr_PI=PI[2,])
 retransform(fit)->fit
 }
 
-list(newdata=newdata,model_transformations=model_transformations)->out
+list(original_model=model,newdata=newdata,model_transformations=model_transformations)->out
 if(bootstrap){
 out$boot_models<-boot_models
 out$boot_coefficients<-boot_coefs
 out$random_residual<-randres
 out$fittedCI<-fittedCI
 out$fittedPI<-fittedPI
-#out$CI<-CI
-#out$PI<-PI
 }
 out$fit<-fit
-class(out)<-c("preds.lm2")
+class(out)<-c("preds_lm2")
 
 return(out)
 }##
 
+##function confint.preds_lm2()
+#' Estimate parameter confidence intervals for preds_lm2 objects
+#' @param preds_lm2 an object of class preds_lm2, output of predict.lm2 with bootstrap=TRUE
+#' @param level desired confidence level
+#' @export confint.preds_lm2
+#' @method confint lm2
+#' @importFrom base confint
+#' @examples
+#' 
+confint.preds_lm2<-function(preds_lm2, level=0.9){
+if("boot_coefficients"%in%names(preds_lm2)){
+c((1-level)/2,level+(1-level)/2)->ci
+apply(X=preds_lm2$boot_coefficients,2,FUN=quantile, probs=ci)->parameter_CI
+apply(X=preds_lm2$boot_coefficients,2,FUN=sd)->parameter_SD
+nrow(preds_lm2$boot_coefficients)->n_reps_bootstrap
+out<-list(call=match.call(),level=level, CIs=parameter_CI,SEs=parameter_SD,n_reps=n_reps_bootstrap)
+
+}else{stop("You need to run predict.lm2() with bootstrap=TRUE!")}
+
+return(out)
+}
 
 ## function wsd()
 #' compute the weighted sample standard deviation or variance
@@ -260,7 +279,6 @@ return(out)
 #' @param na.rm default TRUE
 #' @export wsd
 #' @return the weighted standard deviation (or variance, or mean)
-
 wsd <- function(x, w=rep(1,length(x)), na.rm=TRUE) {
 if(na.rm){which(!is.na(x) & !is.na(w))->indices
 x[indices]->x
@@ -284,21 +302,6 @@ if("weights"%in%names(model) & weighted){
 }
 }##
 
-
-##WIP
-#' invert a lm2 class model to predict x from y
-#'
-#' @param model
-#' @param response
-#' @return An object of class lm2
-#  @method invert lm2
-
-invert.lm2<-function(model, response=2){
-#XXX
-}
-
-
-
 ##summary.lm2
 #' Summary method for lm2 objects output by lm2()
 #'
@@ -313,7 +316,6 @@ summary.lm2<-function(model){
 list()->out
 out$call<-model$call
 out$coefficients<-model$coefficients
-
 rsq(model)->out$r.squared
 
 out$residuals<-model$residuals
