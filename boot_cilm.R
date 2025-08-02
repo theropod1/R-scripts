@@ -1,8 +1,8 @@
 ##function boot_cilm()
-#' construct a linear model confidence interval via bootstrapping
+#' construct a linear model confidence interval for a bivariate OLS model via bootstrapping (appropriate for cases where there is unresolvable heteroscedasticity)
 #'
-#' @param x x values
-#' @param y y values
+#' @param x x values or lm model containing y and x collumns under $model
+#' @param y y values (defaults to NULL)
 #' @param data (optional) data.frame from which to draw x and y
 #' @param reps number of bootstrap repetitions (default 1000)
 #' @param range (optional) range across which to calculate confidence or prediction band (defaults to the width of current plot if xout is not specified)
@@ -51,16 +51,22 @@
 #' ebar(preds_,polygon=TRUE,alpha=0.2)
 
 ##
-boot_cilm<-function(x,y,data=NULL, reps=1000,range=NULL,steps=101,xout=NULL,quantiles=c(0.05,0.95),level=0.9, plot=TRUE, interval="confidence",...){
+boot_cilm<-function(x,y=NULL,data=NULL, reps=1000,range=NULL,steps=101,xout=NULL,quantiles=c(0.05,0.95),level=0.9, plot=TRUE, interval="confidence",...){
 
 if(is.null(range) & is.null(xout)) range<-par("usr")[1:2] #if range and xout are both null, use current plotting device for range
-
 list()->out
+
+if(inherits(x,"lm")){
+x$model[,1]->y
+x$model[,2]->x
+}
+
 if(!is.null(data)){##pull variables from data if possible
-if(inherits(data,c("data.frame","list"))){
-x<-data[[paste(substitute(x))]]
-y<-data[[paste(substitute(y))]]
-}}
+if(inherits(data, c("data.frame", "list"))) {
+  x <- eval(substitute(x), data, parent.frame())
+  y <- eval(substitute(y), data, parent.frame())
+}
+}
 
 if(length(x)!=length(y)) stop("y and x not same length!")
 #prepare xout

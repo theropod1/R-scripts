@@ -1,7 +1,7 @@
 ##%>%
 #' A simple pipe operator that takes the left hand side argument and passes it to the function given as a string on the right hand side. indicate with a "." as an argument in the right hand side function code which argument should be replaced with the piped call
 #' @param lhs object or function call to be evaluated and passed on
-#' @paran rhs either a function name, or a character string containing a valid function call (i.e. able to be coerced to a valid call by parse()), with the argument(s) to be replaced by lhs indicated by a .
+#' @param rhs either a function name, or a character string containing a valid function call (i.e. able to be coerced to a valid call by parse()), with the argument(s) to be replaced by lhs indicated by a .
 #' @return The parsed and evaluated rhs with . replaced by lhs
 #' @export %>%
 

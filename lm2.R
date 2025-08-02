@@ -26,6 +26,7 @@
 #' See also: \url{https://pjbartlein.github.io/GeogDataAnalysis/lec16.html}
 #'
 #' @export lm2
+#' @importFrom weights wtd.cor
 #' @examples
 #' x<-rnorm(10)
 #' y<-rnorm(10,mean=x,sd=0.2)
@@ -273,7 +274,6 @@ numericify <- function(df) {
 #' @return a list() object containing the call, confidence level, parameter confidence estimates, parameter p values, parameter standard deviations and number of bootstrap repetitions
 #' @export confint.preds_lm2
 #' @method confint lm2
-#' @importFrom base confint
 #' @examples
 #' 
 confint.preds_lm2<-function(preds_lm2, level=0.9, p_null=0){
@@ -332,7 +332,6 @@ if("weights"%in%names(model) & weighted){
 #' @param model lm2-class model
 #' @export summary.lm2
 #' @method summary lm2
-#' @importFrom base summary
 #' @examples
 #' 
 
@@ -354,7 +353,6 @@ return(out)
 #' @param model_summary summary_lm2-class model
 #' @export print.summary_lm2
 #' @method print summary_lm2
-#' @importFrom base summary
 #' @examples
 print.summary_lm2<-function(model_summary){
 print(model_summary$call)
