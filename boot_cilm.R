@@ -88,7 +88,7 @@ for(i in 1:reps){
 sample(c(1:length(x)),replace=TRUE)->ind
 x[ind]->x_
 y[ind]->y_
-##XXX add weights option here
+##XXX potentially add weights option here
 dat<-data.frame(x=x_,y=y_)
 lm(y~x, data=dat)->lm_
 

@@ -32,11 +32,16 @@
 #' y<-rnorm(10,mean=x,sd=0.2)
 #' lm2(y~x,data=data.frame(x,y))->rmcf
 
-lm2 <- function(formula, data,v=FALSE, method="tofallis",w=1) {
+lm2 <- function(formula, data=NULL, v=FALSE, method="tofallis",w=1) {
   
   if(length(w)!=nrow(data)) rep(w,nrow(data))[1:nrow(data)]->w
+  if(any(is.na(w))) w[which(is.na(w))]<-0
   
-  mf <- model.frame(formula, data)
+  if(!is.null(data)){mf <- model.frame(formula, data)
+  }else{
+  mf <- model.frame(formula)
+  }
+  
   w<-w[complete.cases(mf)]
   mf<-mf[complete.cases(mf),]
   
@@ -57,7 +62,7 @@ lm2 <- function(formula, data,v=FALSE, method="tofallis",w=1) {
   weights::wtd.cor(as.numeric(X),y,weight=w)[1]->r_pearson
   slopes<-sy/sx*sign(r_pearson)
   names(slopes) <- colnames(X)
-  
+
   intercept<-weighted.mean(y,w=w)-slopes*weighted.mean(as.numeric(X),w=w)
   names(intercept)<-NULL
   fitted <- intercept+slopes*as.numeric(X)
@@ -220,7 +225,7 @@ w<-model$weights[indices]
 lm2(model_formula_,data=training_input,w=w,...)->boot_models[[i]]
 boot_models[[i]]$indices<-indices
 boot_models[[i]]$coefficients->boot_coefs[i,]
-sample(boot_models[[i]]$residuals,1)->randres[i]
+sample(boot_models[[i]]$residuals,1,prob=w)->randres[i]
 
 for(j in 1:nrow(newdata)){#make predictions from bootstrapped model
 fittedCI[i,j]<-boot_coefs[i,1]+sum(newdata[j,]*boot_coefs[i,-1])
@@ -230,12 +235,12 @@ fittedPI[i,j]<-boot_coefs[i,1]+sum(newdata[j,]*boot_coefs[i,-1])+randres[i]
 
 #construct confidence intervals:
 ci<-c((1-level)/2,level+(1-level)/2)
-apply(X=fittedCI,MAR=2,FUN=quantile,probs=ci)->CI
-apply(X=fittedPI,MAR=2,FUN=quantile,probs=ci)->PI
+apply(X=fittedCI,MAR=2,FUN=quantile,probs=ci,na.rm=TRUE)->CI
+apply(X=fittedPI,MAR=2,FUN=quantile,probs=ci,na.rm=TRUE)->PI
 
 fit<-data.frame(fit=fit,lwr_CI=CI[1,],upr_CI=CI[2,],lwr_PI=PI[1,],upr_PI=PI[2,])
-retransform(fit)->fit
 }
+retransform(fit)->fit
 
 list(original_model=model,newdata=newdata,model_transformations=model_transformations)->out
 if(bootstrap){
@@ -281,7 +286,7 @@ if("boot_coefficients"%in%names(preds_lm2)){
 c((1-level)/2,level+(1-level)/2)->ci
 nrow(preds_lm2$boot_coefficients)->n_reps_bootstrap
 
-apply(X=preds_lm2$boot_coefficients,2,FUN=quantile, probs=ci)->parameter_CI
+apply(X=preds_lm2$boot_coefficients,2,FUN=quantile, probs=ci,na.rm=TRUE)->parameter_CI
 
 p_values<-apply(preds_lm2$boot_coefficients,2,FUN=function(x) sum(x<=p_null)/n_reps_bootstrap)
 p_values<-ifelse(p_values>0.5,(1-p_values)*2,p_values*2)
