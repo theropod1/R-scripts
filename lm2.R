@@ -270,27 +270,47 @@ return(out)
 #' plot the bootstrapped models from the output of predict.preds_lm2
 #' @param preds_lm2 an object of class "preds_lm2"
 #' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
-#' @param retransform function to back-transform predicted variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
+#' @param retransform function to back-transform predicted variable. If function is identity, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
 #' @param nmodel number of first nmodel models to plot, if NULL (default) all models are plotted
-#' @param retransform
+#' @param other.predictors named list() or data.frame() with values for other predictors (either constant or same number as n parameter used with curve.
+#' @param predvar predictor variable, defaults to 2 (=slope of the bivariate intercept model)
 #' @param ... additional parameters to pass on to curve
 #' @return nothing, but adds lines for all bootstrapped model to the current plot
 #' @export plot.preds_lm2
 #' @method plot preds_lm2
 #' @importFrom stats predict
 #' @examples
-plot.preds_lm2<-function(preds_lm2,transform=FALSE,retransform=FALSE, nmodel=NULL,...){
+plot.preds_lm2<-function(preds_lm2,transform=identity,retransform=identity, nmodel=NULL,other.predictors=NULL, predvar=2,sample.randres=FALSE,...){
 match.call()->call
 if(is.null(nmodel)) length(preds_lm2$boot_models)->nmodel
 
-if(!is.function(transform) & !is.function(retransform)){
-for(i in 1:nmodel){
-abline(preds_lm2$boot_models[[i]],...)
-}}else{
+if((call$transform==substitute(identity) | !is.function(transform)) & (call$retransform==substitute(identity) | !is.function(retransform)) & is.null(other.predictors) & !sample.randres){ #simplest linear case, for speed of plotting
 
 for(i in 1:nmodel){
+abline(preds_lm2$boot_models[[i]],...)
+}
+
+}else if(is.null(other.predictors)){ # retransformed bivariate model
+
+if(!sample.randres) { #if no random residuals should be added
+for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[2]) ,bootstrap=FALSE)$fit), add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit), add=TRUE,...)
+}}else{ #if random residuals should be added
+for(i in 1:nmodel){
+preds_lm2$boot_models[[i]]->m
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i]), add=TRUE,...)
+}}
+
+}else{ # retransformed multivariate model
+
+if(!sample.randres) { #if no random residuals should be added
+for(i in 1:nmodel){
+preds_lm2$boot_models[[i]]->m
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit), add=TRUE,...)
+}}else{ #if random residuals should be added
+preds_lm2$boot_models[[i]]->m
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i]), add=TRUE,...)
 }
 }
 }##
