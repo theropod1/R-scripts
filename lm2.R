@@ -145,7 +145,10 @@ cov_mf_->fit$cov_matrix
 #' @param level 0.9 confidence level
 #' @param reps 1000 repetitions
 #' @param bootstrap should predictions be bootstrapped to build confidence and prediction intervals (skip to make function run faster)
-#' @param ... other arguments to pass on to lm2
+#' @param sample.weights whether to resample the training data using weights specified in the model (i.e. resampling with unequal probabilities, more highly weighted points are samples more commonly), default FALSE
+#' @param v verbosity setting
+#' @param fit.fun model fitting function, defaults to lm2. If specifying another model fitting function and calling the method explicitly, e.g. using \code{predict.lm2(lm(y~x)...))}, predict.lm2 can also be used as a general bootstrap function for various models given that they contain an intercept term and at least one slope. This functionality hasn’t been thoroughly tested, however!
+#' @param ... other arguments to pass on to lm2 (or other fitting function, if overridden)
 #' @return a list() object containing the original model and predicted values for newdata, as well as confidence intervals for newdata and (if bootstrap==TRUE) the bootstrapped model coefficients, residuals and confidence and prediction intervals for newdata
 #' @export predict.lm2
 #' @method predict lm2
@@ -160,7 +163,7 @@ cov_mf_->fit$cov_matrix
 #' ebar(lower=co$PI0.9[1,],upper=co$PI0.9[2,],x=co$newdata[,1],polygon=TRUE)
 #' abline(rmcf)
 
-predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=1000, v=FALSE,...){
+predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=1000, sample.weights=FALSE, v=FALSE, fit.fun=lm2,...){
 #preparatory steps
 model$model->transformed_vars
 model$formula->model_formula
@@ -215,14 +218,19 @@ fittedPI<-fittedCI
 
 for(i in 1:reps){#bootstrap repetitions
 if(v & i/50>0 & i%%50==0) cat("fitting and predicting for ", i, " in ", reps,"\n")
-sample(c(1:nrow(transformed_vars)), replace=TRUE)->indices
+
+if(!sample.weights) sample(c(1:nrow(transformed_vars)), replace=TRUE)->indices
+if(sample.weights & "weights" %in% names(model)) sample(c(1:nrow(transformed_vars)), replace=TRUE,prob=model$weights)->indices
+
 transformed_vars[indices,]->training_input
 colnames(training_input)<-raw_vars
+
 if("weights" %in% names(model)){
 w<-model$weights[indices]
 }else{w<-1}
+
 #resampled model fitting
-lm2(model_formula_,data=training_input,w=w,...)->boot_models[[i]]
+fit.fun(model_formula_,data=training_input,w=w,...)->boot_models[[i]]
 boot_models[[i]]$indices<-indices
 boot_models[[i]]$coefficients->boot_coefs[i,]
 sample(boot_models[[i]]$residuals,1,prob=w)->randres[i]
@@ -255,6 +263,38 @@ class(out)<-c("preds_lm2")
 
 return(out)
 }##
+
+
+
+##plot.preds_lm2()
+#' plot the bootstrapped models from the output of predict.preds_lm2
+#' @param preds_lm2 an object of class "preds_lm2"
+#' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
+#' @param retransform function to back-transform predicted variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
+#' @param nmodel number of first nmodel models to plot, if NULL (default) all models are plotted
+#' @param retransform
+#' @param ... additional parameters to pass on to curve
+#' @return nothing, but adds lines for all bootstrapped model to the current plot
+#' @export plot.preds_lm2
+#' @method plot preds_lm2
+#' @importFrom stats predict
+#' @examples
+plot.preds_lm2<-function(preds_lm2,transform=FALSE,retransform=FALSE, nmodel=NULL,...){
+match.call()->call
+if(is.null(nmodel)) length(preds_lm2$boot_models)->nmodel
+
+if(!is.function(transform) & !is.function(retransform)){
+for(i in 1:nmodel){
+abline(preds_lm2$boot_models[[i]],...)
+}}else{
+
+for(i in 1:nmodel){
+preds_lm2$boot_models[[i]]->m
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[2]) ,bootstrap=FALSE)$fit), add=TRUE,...)
+}
+}
+}##
+
 
 
 ##numericify()
