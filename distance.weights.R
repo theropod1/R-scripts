@@ -92,24 +92,24 @@ return(anc_/max(ape::node.depth.edgelength(phy)))
 #' @param data dataset from which to pull values
 #' @param phy scaled phylogeny containing all the taxa in the dataset
 #' @param taxon vector of taxon name (or column of data containing it)
-#' @param response vector of response variable against which to compare estimated values (default NULL tries to automatically pull and transform this from the model frame)
-#' @param retransform back-transformation to apply to values before calculating mean square error
+#' @param retransform back-transformation to apply to values before calculating mean square error. Defaults to 10^x (for retransforming log10()-transformed data), if no transformation happened specify identity.
 #' @param v verbosity setting. if v==TRUE, function returns a data frame with all original data, fitted values from the base and OU-weighted model, and error terms for each estimate.
 #' @return if v==FALSE (default), the mean square error at the chosen alpha value
 #' @export alpha_error
 #' @examples
-#' \dontrun{ alpha_error(alpha=0.08,formula=log10_fl~log10_tl, data=CLP, phy=tree0, taxa=CLP$taxon, response=NULL,v=FALSE) }
+#' \dontrun{ alpha_error(alpha=0.08,formula=log10_fl~log10_tl, data=CLP, phy=tree0, taxa=CLP$taxon,v=FALSE) }
 
 ##calculate the mean square error for a given alpha value
-alpha_error<-function( alpha, formula, data, phy, taxa=taxon, response=NULL, fit.fun=lm2, retransform=function(x){10^x}, v=FALSE) {
+alpha_error<-function( alpha, formula, data, phy, taxa=taxon, fit.fun=lm2, retransform=function(x){10^x}, v=FALSE) {
 match.call()->call
-
+  if(!is.null(data)){mf <- model.frame(formula, data, na.action=na.pass)
+  }else{
+  mf <- model.frame(formula, na.action=na.pass)
+  }
+  
 fit.fun(log10_fl~log10_tl, data=CLP)->base_model #lm2_fltl
 
-#look for response variable
-eval(call$response, data, parent.frame())->response
-if(is.null(response)){retransform(base_model$model[,1])->response #look up and retransform data from model if needed
-}
+retransform(mf[,1])->response #look up and retransform data from model to find response variable
 eval(call$taxa, data, parent.frame())->taxa #look for taxa
 
 if(all(taxa%in%phy$tip.label) & !is.null(phy$edge.length)){message("Edge length and taxa in phylogeny: OK")
@@ -128,9 +128,10 @@ retransform(predict(focal_model,newdata=data,bootstrap=F)$fit)->focal
 focal[which(taxa==unique(taxa)[i])]->focal_preds[which(taxa==unique(taxa)[i])]
 }
 
-results<-data.frame(taxa,response,retransform(base_model$model[,-1]),no_focal,focal_preds,err_nofocal=(no_focal-response),squerr_nofocal=(no_focal-response)^2,err_focal=(focal_preds-response),squerr_focal=(focal_preds-response)^2) #for testing purposes
+results<-data.frame(taxa,retransform(mf[,1]),retransform(mf[,-1]),no_focal,focal_preds,err_nofocal=(no_focal-response),squerr_nofocal=(no_focal-response)^2,err_focal=(focal_preds-response),squerr_focal=(focal_preds-response)^2) #for testing purposes
+
 MSQ<-mean(results$squerr_focal,na.rm=TRUE)
-if(any(is.na(results$squerr_focal))) warning("some square errors were NA")
+if(any(is.na(results$squerr_focal))) message("NOTE: some square errors were NA. This is normal if your data contained rows lacking predictors")
 
 if(v){return(results)}else{
 

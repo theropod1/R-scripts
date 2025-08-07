@@ -33,18 +33,18 @@
 #' lm2(y~x,data=data.frame(x,y))->rmcf
 
 lm2 <- function(formula, data=NULL, v=FALSE, method="tofallis",w=1) {
-  
-  if(length(w)!=nrow(data)) rep(w,nrow(data))[1:nrow(data)]->w
-  if(any(is.na(w))) w[which(is.na(w))]<-0
-  
-  if(!is.null(data)){mf <- model.frame(formula, data)
+  if(!is.null(data)){mf <- model.frame(formula, data, na.action=na.pass)
   }else{
-  mf <- model.frame(formula)
+  mf <- model.frame(formula, na.action=na.pass)
   }
+# print(mf) #for troubleshooting
   
-  w<-w[complete.cases(mf)]
-  mf<-mf[complete.cases(mf),]
-  
+  if(length(w)!=nrow(data)) rep(w,nrow(mf))[1:nrow(mf)]->w
+  if(any(is.na(w))) w[which(is.na(w))]<-0
+ 
+w<-w[complete.cases(mf)]
+mf<-mf[complete.cases(mf),]
+#  print(mf)
   y <- model.response(mf)
   X <- model.matrix(attr(mf, "terms"), data = mf)
   if(v) print(mf)
@@ -262,6 +262,34 @@ out$fit<-fit
 class(out)<-c("preds_lm2")
 
 return(out)
+}##
+
+
+##plot.lm2()
+#' plot a model of class lm2 from the output of lm2()
+#' @param linmod2 an object of class "preds_lm2"
+#' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
+#' @param retransform function to back-transform predicted variable. If function is identity, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
+#' @param other.predictors named list() or data.frame() with values for other predictors (either constant or same number as n parameter used with curve.
+#' @param predvar predictor variable, defaults to 2 (=slope of the bivariate intercept model)
+#' @param ... additional parameters to pass on to curve
+#' @return nothing, but adds lines for all bootstrapped model to the current plot
+#' @export plot.lm2
+#' @method plot lm2
+#' @importFrom stats predict
+#' @examples
+plot.lm2<-function(m,transform=identity,retransform=identity,other.predictors=NULL, predvar=2,...){
+match.call()->call
+
+if(is.null(other.predictors)){ # retransformed bivariate model
+
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit), add=TRUE,...)
+
+}else{ # retransformed multivariate model
+
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit), add=TRUE,...)
+
+}
 }##
 
 
