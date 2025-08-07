@@ -112,7 +112,8 @@ fit.fun(log10_fl~log10_tl, data=CLP)->base_model #lm2_fltl
 retransform(mf[,1])->response #look up and retransform data from model to find response variable
 eval(call$taxa, data, parent.frame())->taxa #look for taxa
 
-if(all(taxa%in%phy$tip.label) & !is.null(phy$edge.length)){message("Edge length and taxa in phylogeny: OK")
+if(all(taxa%in%phy$tip.label) & !is.null(phy$edge.length)){
+if(v) message("Edge length and taxa in phylogeny: OK")
 
 retransform(predict(base_model, data, bootstrap=F)$fit)->no_focal
 #sqerr0<-mean((no_focal-response)^2)
@@ -131,11 +132,13 @@ focal[which(taxa==unique(taxa)[i])]->focal_preds[which(taxa==unique(taxa)[i])]
 results<-data.frame(taxa,retransform(mf[,1]),retransform(mf[,-1]),no_focal,focal_preds,err_nofocal=(no_focal-response),squerr_nofocal=(no_focal-response)^2,err_focal=(focal_preds-response),squerr_focal=(focal_preds-response)^2) #for testing purposes
 
 MSQ<-mean(results$squerr_focal,na.rm=TRUE)
-if(any(is.na(results$squerr_focal))) message("NOTE: some square errors were NA. This is normal if your data contained rows lacking predictors")
+if(any(is.na(results$squerr_focal)) & v) message("NOTE: some square errors were NA. This is normal if your data contained rows lacking predictors")
 
 if(v){return(results)}else{
 
 return(MSQ) 
 
-}}}##
+}}else{stop("Not all taxa could be found in phylogeny!")}
+
+}##
 
