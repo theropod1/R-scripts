@@ -132,10 +132,11 @@ focal[which(taxa==unique(taxa)[i])]->focal_preds[which(taxa==unique(taxa)[i])]
 results<-data.frame(taxa,retransform(mf[,1]),retransform(mf[,-1]),no_focal,focal_preds,err_nofocal=(no_focal-response),squerr_nofocal=(no_focal-response)^2,err_focal=(focal_preds-response),squerr_focal=(focal_preds-response)^2) #for testing purposes
 
 MSQ<-mean(results$squerr_focal,na.rm=TRUE)
+message("alpha =", alpha,"--> MSQE =", MSQ) #to give update during optimization procedures
+
 if(any(is.na(results$squerr_focal)) & v) message("NOTE: some square errors were NA. This is normal if your data contained rows lacking predictors")
 
 if(v){return(results)}else{
-
 return(MSQ) 
 
 }}else{stop("Not all taxa could be found in phylogeny!")}

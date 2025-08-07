@@ -1,3 +1,9 @@
+
+
+
+### DEPRECATED: Now in "util.R"
+
+
 ##function plotr()
 
 #' return the width or height of the opened plotting device

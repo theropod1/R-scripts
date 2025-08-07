@@ -87,12 +87,40 @@ M<-function(...) mean(c(...),na.rm=TRUE)#shortcut for mean
 AR<-function() par("pin")[1]/diff(par("usr")[1:2])/(par("pin")[2]/diff(par("usr")[3:4]))
 ##
 
+##function plotr()
+#' return the width or height of the opened plotting device
+#' @param axis what axis of the plot to return range or span for
+#' @param range logical indicating whether to retusn
+#' @return the width or height of the plot as a numeric of length 1, or the range on the specified axis as a numeric of length 2
+#' @export plotr
+
+plotr<-function(axis="x",range=FALSE){
+if(range){
+if(axis=="x"){
+range(par("usr")[1:2])
+}else{
+range(par("usr")[3:4])
+}
+
+}else{
+if(axis=="x"){
+abs(diff(range(par("usr")[1:2])))
+}else{
+abs(diff(range(par("usr")[3:4])))
+}
+
+}
+}
+
 ##NNA()
 #' remove NA values from a vector
 #' @param x vector from which NAs are to be removed
-#' @return a vector consisting of all elements of x in the same order, except values that are NA
+#' @param replace Either FALSE or a numeric value to substitute for NA in the output data
+#' @return a vector consisting of all elements of x in the same order, with NAs removed or substituted
 #' @export NNA
-NNA<-function(x){ x[!is.na(x)]}
+NNA<-function(x,replace=FALSE){ 
+x[!is.na(x)]
+}
 
 
 ##same()
@@ -105,7 +133,7 @@ if(length(unique(x))==1) return(TRUE)
 else return(FALSE)
 }
 
-##same()
+##between()
 #' test if x lies between a set of values
 #' @param x single numeric
 #' @param between numeric vector to compare x to

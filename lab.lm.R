@@ -168,7 +168,7 @@ if(RMSE) text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), rmse,...)##plot root 
 
 }##
 
-
+##function PPE()
 #' Calculate the percent prediction error of a model or two sets of data
 #' @param yfitted Either a model of class "lm", or a numeric vector with fitted values to be compared to observed values
 #' @param yobserved observed y values. If NULL, observed values are calculated based on fitted and residual values from supplied model
