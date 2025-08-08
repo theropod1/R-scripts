@@ -3,7 +3,7 @@
 ##lm2()
 #' Function for fitting linear model II regressions
 #'
-#' @param formula model formula
+#' @param formula model formula (to suppress/set to 0 intercept in bivariate model, add +0 to the predictor variable)
 #' @param data data for model
 #' @param v verbosity setting (logical)
 #' @param method method for fitting model, defaults to Impartial Least Squares or Covariance-Matrix-based Model II Regression sensu Tofallis 2023, alternative method "PCA" uses Principal Component–based Reduced Major Axis Regression that uses prcomp() to find slopes (for the bivariate case, both are identical and the slope is simply \code{sign(cor())*sd(y)/sd(x)}
@@ -39,17 +39,20 @@ lm2 <- function(formula, data=NULL, v=FALSE, method="tofallis",w=1) {
   }
 # print(mf) #for troubleshooting
   
+  has_intercept <- attr(terms(mf), "intercept") == 1
+	if(v)  message("Has intercept?", has_intercept)
+  
   if(length(w)!=nrow(data)) rep(w,nrow(mf))[1:nrow(mf)]->w
   if(any(is.na(w))) w[which(is.na(w))]<-0
  
-w<-w[complete.cases(mf)]
-mf<-mf[complete.cases(mf),]
-#  print(mf)
+	w<-w[complete.cases(mf)]
+	mf<-mf[complete.cases(mf),]
+  #  print(mf)
   y <- model.response(mf)
   X <- model.matrix(attr(mf, "terms"), data = mf)
   if(v) print(mf)
   if(v) print(X)
-  X <- X[, -1, drop = FALSE]  # remove intercept column
+if(has_intercept)  X <- X[, -1, drop = FALSE]  # remove intercept column
   if(v) print(X)
   # Standard deviations for back-transform
   sy <- sd(y)
@@ -60,10 +63,15 @@ mf<-mf[complete.cases(mf),]
   sy <- wsd(y,w=w)
   sx <- wsd(as.numeric(X),w=w)
   weights::wtd.cor(as.numeric(X),y,weight=w)[1]->r_pearson
+  
   slopes<-sy/sx*sign(r_pearson)
+  if(!has_intercept) slopes<-sign(r_pearson) * sqrt(sum(w * y^2) / sum(w * as.numeric(X)^2))
   names(slopes) <- colnames(X)
 
-  intercept<-weighted.mean(y,w=w)-slopes*weighted.mean(as.numeric(X),w=w)
+	if(has_intercept) intercept<-weighted.mean(y,w=w)-slopes*weighted.mean(as.numeric(X),w=w)
+	
+	if(!has_intercept) intercept<-0
+
   names(intercept)<-NULL
   fitted <- intercept+slopes*as.numeric(X)
   
@@ -275,7 +283,7 @@ out$random_residual<-randres
 out$boot_smearing_factors<-smearing_factors
 out$fittedCI<-fittedCI
 out$fittedPI<-fittedPI
-out$retransformations_applied<-eval(call$retransform)
+out$retransformations_applied<-retransform
 }
 out$fit<-fit
 class(out)<-c("preds_lm2")
@@ -300,10 +308,9 @@ return(out)
 #' @examples
 plot.lm2<-function(m,transform=identity,retransform=identity,other.predictors=NULL, predvar=2,smearing.corr=FALSE,...){
 match.call()->call
-
 #calculate smearing factor
 corr<-1
-if(smearing.corr & call$retransform!=substitute(identity)){
+if(smearing.corr && "retransform" %in% names(call) && call$retransform!=substitute(identity)){
 if("weights"%in%names(m)){corr<-weighted.mean(retransform(m$residuals),m$weights)}else{corr<-mean(retransform(m$residuals))}
 }
 
@@ -339,7 +346,7 @@ plot.preds_lm2<-function(preds_lm2,transform=identity,retransform=identity, nmod
 match.call()->call
 if(is.null(nmodel)) length(preds_lm2$boot_models)->nmodel
 
-if((call$transform==substitute(identity) | !is.function(transform)) & (call$retransform==substitute(identity) | !is.function(retransform)) & is.null(other.predictors) & !sample.randres & preds_lm2$smearing_factor_main==1){ #simplest linear case, for speed of plotting
+if((("transform" %in%names(call) && call$transform==substitute(identity)) | !is.function(transform)) && ((("retransform" %in%names(call) && call$retransform==substitute(identity)) | !is.function(retransform))) && is.null(other.predictors) && !sample.randres && preds_lm2$smearing_factor_main==1){ #simplest linear case, for speed of plotting
 
 for(i in 1:nmodel){
 abline(preds_lm2$boot_models[[i]],...)
