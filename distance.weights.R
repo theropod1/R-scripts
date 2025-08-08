@@ -92,16 +92,18 @@ return(anc_/max(ape::node.depth.edgelength(phy)))
 #' @param data dataset from which to pull values
 #' @param phy scaled phylogeny containing all the taxa in the dataset
 #' @param taxon vector of taxon name (or column of data containing it)
-#' @param retransform back-transformation to apply to values before calculating mean square error. Defaults to 10^x (for retransforming log10()-transformed data), if no transformation happened specify identity.
+#' @param retransform back-transformation to apply to values before calculating mean square error. Defaults to 10^x (for retransforming log10()-transformed data), if no retransformation should happen, specify identity here.
 #' @param v verbosity setting. if v==TRUE, function returns a data frame with all original data, fitted values from the base and OU-weighted model, and error terms for each estimate.
+#' @param ... additional arguments to pass on to predict(), e.g. retransform and smearing.corr, if desired
 #' @return if v==FALSE (default), the mean square error at the chosen alpha value
 #' @export alpha_error
 #' @examples
 #' \dontrun{ alpha_error(alpha=0.08,formula=log10_fl~log10_tl, data=CLP, phy=tree0, taxa=CLP$taxon,v=FALSE) }
 
 ##calculate the mean square error for a given alpha value
-alpha_error<-function( alpha, formula, data, phy, taxa=taxon, fit.fun=lm2, retransform=function(x){10^x}, v=FALSE) {
+alpha_error<-function( alpha, formula, data, phy, taxa=taxon, fit.fun=lm2, retransform=function(x){10^x}, v=FALSE, smearing.corr=FALSE) {
 match.call()->call
+
   if(!is.null(data)){mf <- model.frame(formula, data, na.action=na.pass)
   }else{
   mf <- model.frame(formula, na.action=na.pass)
@@ -109,14 +111,17 @@ match.call()->call
   
 fit.fun(log10_fl~log10_tl, data=CLP)->base_model #lm2_fltl
 
-retransform(mf[,1])->response #look up and retransform data from model to find response variable
+retransform(mf[,1])->response#look up and retransform data from model to find response variable
+
 eval(call$taxa, data, parent.frame())->taxa #look for taxa
 
 if(all(taxa%in%phy$tip.label) & !is.null(phy$edge.length)){
 if(v) message("Edge length and taxa in phylogeny: OK")
 
-retransform(predict(base_model, data, bootstrap=F)$fit)->no_focal
-#sqerr0<-mean((no_focal-response)^2)
+smearing_factor_main<-1
+if(smearing.corr) smearing_factor_main<-mean(retransform(base_model$residuals))
+
+retransform(predict(base_model, data, bootstrap=F)$fit)*smearing_factor_main->no_focal
 
 focal_preds<-numeric()
 for(i in 1:length(unique(taxa))){
@@ -125,11 +130,15 @@ distance.weights(tree0,unique(taxa)[i],method="OU",alpha=alpha, exclude.focal=TR
 
 fit.fun(log10_fl~log10_tl, data=data[taxa!=unique(taxa)[i],], w=rweight[taxa!=unique(taxa)[i]])->focal_model #excluding focal taxon again, in case model fitting function can’t handle NA
 
-retransform(predict(focal_model,newdata=data,bootstrap=F)$fit)->focal
+smearing_factor_focal<-1
+if(smearing.corr) smearing_factor_focal<-mean(retransform(focal_model$residuals))
+if(smearing.corr & "weights"%in%names(focal_model)) smearing_factor_focal<-weighted.mean(retransform(focal_model$residuals),focal_model$weights)
+
+retransform(predict(focal_model,newdata=data,bootstrap=F)$fit)*smearing_factor_focal->focal
 focal[which(taxa==unique(taxa)[i])]->focal_preds[which(taxa==unique(taxa)[i])]
 }
 
-results<-data.frame(taxa,retransform(mf[,1]),retransform(mf[,-1]),no_focal,focal_preds,err_nofocal=(no_focal-response),squerr_nofocal=(no_focal-response)^2,err_focal=(focal_preds-response),squerr_focal=(focal_preds-response)^2) #for testing purposes
+results<-data.frame( taxa,retransform(mf[,1]),retransform(mf[,-1]),no_focal,focal_preds,err_nofocal=(no_focal-response),squerr_nofocal=(no_focal-response)^2,err_focal=(focal_preds-response),squerr_focal=(focal_preds-response)^2 ) #for testing purposes
 
 MSQ<-mean(results$squerr_focal,na.rm=TRUE)
 message("alpha =", alpha,"--> MSQE =", MSQ) #to give update during optimization procedures

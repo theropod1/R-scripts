@@ -148,11 +148,12 @@ cov_mf_->fit$cov_matrix
 #' @param sample.weights whether to resample the training data using weights specified in the model (i.e. resampling with unequal probabilities, more highly weighted points are samples more commonly), default FALSE
 #' @param v verbosity setting
 #' @param fit.fun model fitting function, defaults to lm2. If specifying another model fitting function and calling the method explicitly, e.g. using \code{predict.lm2(lm(y~x)...))}, predict.lm2 can also be used as a general bootstrap function for various models given that they contain an intercept term and at least one slope. This functionality hasn’t been thoroughly tested, however!
+#' @param smearing.corr logical indicating whether Duan’s correction ("smearing factor") should be applied (only when regression uses transformed values).
 #' @param ... other arguments to pass on to lm2 (or other fitting function, if overridden)
 #' @return a list() object containing the original model and predicted values for newdata, as well as confidence intervals for newdata and (if bootstrap==TRUE) the bootstrapped model coefficients, residuals and confidence and prediction intervals for newdata
 #' @export predict.lm2
 #' @method predict lm2
-#' @importFrom stats predict
+#' @importFrom stats predict weighted.mean
 #' @examples
 #' x<-rnorm(10)
 #' y<-rnorm(10,mean=x,sd=0.2)
@@ -163,8 +164,9 @@ cov_mf_->fit$cov_matrix
 #' ebar(lower=co$PI0.9[1,],upper=co$PI0.9[2,],x=co$newdata[,1],polygon=TRUE)
 #' abline(rmcf)
 
-predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=1000, sample.weights=FALSE, v=FALSE, fit.fun=lm2,...){
+predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=1000, sample.weights=FALSE, v=FALSE, fit.fun=lm2, smearing.corr=FALSE,...){
 #preparatory steps
+match.call()->call
 model$model->transformed_vars
 model$formula->model_formula
 reformulate(all.vars(model_formula)[-1], response = all.vars(model_formula)[1])->model_formula_
@@ -204,6 +206,11 @@ if(v) print(head(newdata))
 
 ##predict best-fit values
 fit<-numeric()
+
+smearing_factor_main<-1
+if(smearing.corr & "weights"%in%names(model)) smearing_factor_main<-weighted.mean(retransform(model$residuals),model$weights)
+if(smearing.corr & !("weights"%in%names(model))) smearing_factor_main<-mean(retransform(model$residuals))
+
 for(i in 1:nrow(newdata)) fit[i]<-model$coefficients[1]+sum(model$coefficients[-1]*newdata[i,])
 
 ##bootstrap for confidence and prediction intervals
@@ -215,6 +222,7 @@ boot_models<-list()
 
 fittedCI<-matrix(NA,nrow=reps, ncol=nrow(newdata))
 fittedPI<-fittedCI
+smearing_factors<-rep(1,reps)
 
 for(i in 1:reps){#bootstrap repetitions
 if(v & i/50>0 & i%%50==0) cat("fitting and predicting for ", i, " in ", reps,"\n")
@@ -227,7 +235,7 @@ colnames(training_input)<-raw_vars
 
 if("weights" %in% names(model)){
 w<-model$weights[indices]
-}else{w<-1}
+}else{w<-rep(1,nrow(model$model))}
 
 #resampled model fitting
 fit.fun(model_formula_,data=training_input,w=w,...)->boot_models[[i]]
@@ -235,28 +243,39 @@ boot_models[[i]]$indices<-indices
 boot_models[[i]]$coefficients->boot_coefs[i,]
 sample(boot_models[[i]]$residuals,1,prob=w)->randres[i]
 
+#calculate smearing factor
+if(smearing.corr & exists("w"))  smearing_factors[i]<-weighted.mean(retransform(boot_models[[i]]$residuals),w) ##XXX
+
 for(j in 1:nrow(newdata)){#make predictions from bootstrapped model
 fittedCI[i,j]<-boot_coefs[i,1]+sum(newdata[j,]*boot_coefs[i,-1])
 fittedPI[i,j]<-boot_coefs[i,1]+sum(newdata[j,]*boot_coefs[i,-1])+randres[i]
 }
-}
+
+}#end bootstrap
 
 #construct confidence intervals:
 ci<-c((1-level)/2,level+(1-level)/2)
+
+#retransform and apply smearing_factor, if desired
+retransform(fit)*smearing_factor_main->fit
+retransform(fittedCI)*smearing_factors->fittedCI
+retransform(fittedPI)*smearing_factors->fittedPI
+
 apply(X=fittedCI,MAR=2,FUN=quantile,probs=ci,na.rm=TRUE)->CI
 apply(X=fittedPI,MAR=2,FUN=quantile,probs=ci,na.rm=TRUE)->PI
 
 fit<-data.frame(fit=fit,lwr_CI=CI[1,],upr_CI=CI[2,],lwr_PI=PI[1,],upr_PI=PI[2,])
 }
-retransform(fit)->fit
 
-list(original_model=model,newdata=newdata,model_transformations=model_transformations)->out
+list(original_model=model,newdata=newdata,model_transformations=model_transformations,smearing_factor_main=smearing_factor_main)->out
 if(bootstrap){
 out$boot_models<-boot_models
 out$boot_coefficients<-boot_coefs
 out$random_residual<-randres
+out$boot_smearing_factors<-smearing_factors
 out$fittedCI<-fittedCI
 out$fittedPI<-fittedPI
+out$retransformations_applied<-eval(call$retransform)
 }
 out$fit<-fit
 class(out)<-c("preds_lm2")
@@ -272,22 +291,30 @@ return(out)
 #' @param retransform function to back-transform predicted variable. If function is identity, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
 #' @param other.predictors named list() or data.frame() with values for other predictors (either constant or same number as n parameter used with curve.
 #' @param predvar predictor variable, defaults to 2 (=slope of the bivariate intercept model)
+#' @param smearing.corr should smearing factor be applied (see predict.lm2)
 #' @param ... additional parameters to pass on to curve
 #' @return nothing, but adds lines for all bootstrapped model to the current plot
 #' @export plot.lm2
 #' @method plot lm2
-#' @importFrom stats predict
+#' @importFrom stats predict weighted.mean
 #' @examples
-plot.lm2<-function(m,transform=identity,retransform=identity,other.predictors=NULL, predvar=2,...){
+plot.lm2<-function(m,transform=identity,retransform=identity,other.predictors=NULL, predvar=2,smearing.corr=FALSE,...){
 match.call()->call
 
+#calculate smearing factor
+corr<-1
+if(smearing.corr & call$retransform!=substitute(identity)){
+if("weights"%in%names(m)){corr<-weighted.mean(retransform(m$residuals),m$weights)}else{corr<-mean(retransform(m$residuals))}
+}
+
+##plot models
 if(is.null(other.predictors)){ # retransformed bivariate model
 
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit), add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
 
 }else{ # retransformed multivariate model
 
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit), add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
 
 }
 }##
@@ -312,7 +339,7 @@ plot.preds_lm2<-function(preds_lm2,transform=identity,retransform=identity, nmod
 match.call()->call
 if(is.null(nmodel)) length(preds_lm2$boot_models)->nmodel
 
-if((call$transform==substitute(identity) | !is.function(transform)) & (call$retransform==substitute(identity) | !is.function(retransform)) & is.null(other.predictors) & !sample.randres){ #simplest linear case, for speed of plotting
+if((call$transform==substitute(identity) | !is.function(transform)) & (call$retransform==substitute(identity) | !is.function(retransform)) & is.null(other.predictors) & !sample.randres & preds_lm2$smearing_factor_main==1){ #simplest linear case, for speed of plotting
 
 for(i in 1:nmodel){
 abline(preds_lm2$boot_models[[i]],...)
@@ -323,11 +350,11 @@ abline(preds_lm2$boot_models[[i]],...)
 if(!sample.randres) { #if no random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit), add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}else{ #if random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i]), add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}
 
 }else{ # retransformed multivariate model
@@ -335,10 +362,10 @@ curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m
 if(!sample.randres) { #if no random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit), add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}else{ #if random residuals should be added
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i]), add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }
 }
 }##
