@@ -157,6 +157,7 @@ cov_mf_->fit$cov_matrix
 #' @param v verbosity setting
 #' @param fit.fun model fitting function, defaults to lm2. If specifying another model fitting function and calling the method explicitly, e.g. using \code{predict.lm2(lm(y~x)...))}, predict.lm2 can also be used as a general bootstrap function for various models given that they contain an intercept term and at least one slope. This functionality hasn’t been thoroughly tested, however!
 #' @param smearing.corr logical indicating whether Duan’s correction ("smearing factor") should be applied (only when regression uses transformed values).
+#' @param isometry.Null For cases where the bootstrap returns a dataset with a single effective observation, should isometry be used for the prediction (defaults to FALSE, which replaces these cases with NA).
 #' @param ... other arguments to pass on to lm2 (or other fitting function, if overridden)
 #' @return a list() object containing the original model and predicted values for newdata, as well as confidence intervals for newdata and (if bootstrap==TRUE) the bootstrapped model coefficients, residuals and confidence and prediction intervals for newdata
 #' @export predict.lm2
@@ -172,11 +173,12 @@ cov_mf_->fit$cov_matrix
 #' ebar(lower=co$PI0.9[1,],upper=co$PI0.9[2,],x=co$newdata[,1],polygon=TRUE)
 #' abline(rmcf)
 
-predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=1000, sample.weights=FALSE, v=FALSE, fit.fun=lm2, smearing.corr=FALSE,...){
+predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=1000, sample.weights=FALSE, v=FALSE, fit.fun=lm2, smearing.corr=FALSE,isometry.Null=FALSE,...){
 #preparatory steps
 match.call()->call
 model$model->transformed_vars
-model$formula->model_formula
+if("formula"%in%names(model)){ model$formula->model_formula }else if("formula"%in%names(model$call)) { model$call$formula->model_formula }
+
 reformulate(all.vars(model_formula)[-1], response = all.vars(model_formula)[1])->model_formula_
 if(v) print(model_formula)
 if(v) print(model_formula_)
@@ -219,7 +221,13 @@ smearing_factor_main<-1
 if(smearing.corr & "weights"%in%names(model)) smearing_factor_main<-weighted.mean(retransform(model$residuals),model$weights)
 if(smearing.corr & !("weights"%in%names(model))) smearing_factor_main<-mean(retransform(model$residuals))
 
-for(i in 1:nrow(newdata)) fit[i]<-model$coefficients[1]+sum(model$coefficients[-1]*newdata[i,])
+model_<-model
+
+if(!any(names(model$coefficients) == "(Intercept)")){ model_$coefficients<-c("(Intercept)"=0, model$coefficients) #make sure first model parameter is intercept, even if it is not returned by default
+}else if(which(names(model$coefficients) == "(Intercept)")!=1){ model_$coefficients<-c("(Intercept)"=model$coefficients[which(names(model$coefficients) == "(Intercept)")], model$coefficients[-which(names(model$coefficients) == "(Intercept)")]) #make sure first model parameter is the intercept, even if it is not returned as the first parameter
+}
+
+for(i in 1:nrow(newdata)) fit[i]<-model_$coefficients[1]+sum(model_$coefficients[-1]*newdata[i,])
 
 ##bootstrap for confidence and prediction intervals
 if(bootstrap){
@@ -232,7 +240,9 @@ fittedCI<-matrix(NA,nrow=reps, ncol=nrow(newdata))
 fittedPI<-fittedCI
 smearing_factors<-rep(1,reps)
 
-for(i in 1:reps){#bootstrap repetitions
+some_identical<-FALSE
+##bootstrap reps
+for(i in 1:reps){
 if(v & i/50>0 & i%%50==0) cat("fitting and predicting for ", i, " in ", reps,"\n")
 
 if(!sample.weights) sample(c(1:nrow(transformed_vars)), replace=TRUE)->indices
@@ -244,22 +254,47 @@ colnames(training_input)<-raw_vars
 if("weights" %in% names(model)){
 w<-model$weights[indices]
 }else{w<-rep(1,nrow(model$model))}
-
+#print(knitr::kable(training_input))
 #resampled model fitting
-fit.fun(model_formula_,data=training_input,w=w,...)->boot_models[[i]]
+if(!all(apply(training_input,2,FUN=function(x){length(unique(x))})==1)){#safeguard for samplings with all values being identical
+fit.fun(model_formula_,data=training_input,w=w,...)->bm
+bm->boot_models[[i]] #save original model fitt
+
+#modify temporary model object to reflect presence of an intercept, if not present
+if(!any(names(bm$coefficients) == "(Intercept)")){ bm$coefficients<-c("(Intercept)"=0, model$coefficients) #make sure first model parameter is intercept, even if it is not returned by default
+}else if(which(names(bm$coefficients) == "(Intercept)")!=1){ bm$coefficients<-c("(Intercept)"=bm$coefficients[which(names(bm$coefficients) == "(Intercept)")], bm$coefficients[-which(names(model$coefficients) == "(Intercept)")]) #make sure first model parameter is the intercept, even if it is not returned as the first parameter
+} 
+
 boot_models[[i]]$indices<-indices
-boot_models[[i]]$coefficients->boot_coefs[i,]
+bm$coefficients->boot_coefs[i,] #save coefficients used, including added intercept term of 0, as needed
 sample(boot_models[[i]]$residuals,1,prob=w)->randres[i]
 
 #calculate smearing factor
-if(smearing.corr & exists("w"))  smearing_factors[i]<-weighted.mean(retransform(boot_models[[i]]$residuals),w) ##XXX
+if(smearing.corr & exists("w"))  smearing_factors[i]<-weighted.mean(retransform(boot_models[[i]]$residuals),w)
 
 for(j in 1:nrow(newdata)){#make predictions from bootstrapped model
 fittedCI[i,j]<-boot_coefs[i,1]+sum(newdata[j,]*boot_coefs[i,-1])
 fittedPI[i,j]<-boot_coefs[i,1]+sum(newdata[j,]*boot_coefs[i,-1])+randres[i]
 }
 
-}#end bootstrap
+}else{
+boot_models[[i]]<-0
+boot_coefs[i,]<-NA #save coefficients used, including added intercept term of 0, as needed
+randres[i]<-0
+
+if(isometry.Null){
+fittedCI[i,]<-rowmeans(newdata[,colnames(training_input)[-1]])/mean(training_input[1,-1])*training_input[1,1] #isometric predictions
+fittedPI[i,]<-fittedCI[i,]}else{
+fittedPI[i,]<-NA
+fittedCI[i,]<-NA
+}
+
+some_identical<-TRUE
+}
+
+}##end bootstrap
+if(some_identical & isometry.Null) message("Some bootstrap repetitions resulted in resampled datasets with only a single effective observation, corresponding predictions are generated isometrically")
+if(some_identical & !isometry.Null) message("Some bootstrap repetitions resulted in resampled datasets with only a single effective observation, corresponding predictions are replaced with NAs")
 
 #construct confidence intervals:
 ci<-c((1-level)/2,level+(1-level)/2)
@@ -349,7 +384,7 @@ if(is.null(nmodel)) length(preds_lm2$boot_models)->nmodel
 if((("transform" %in%names(call) && call$transform==substitute(identity)) | !is.function(transform)) && ((("retransform" %in%names(call) && call$retransform==substitute(identity)) | !is.function(retransform))) && is.null(other.predictors) && !sample.randres && preds_lm2$smearing_factor_main==1){ #simplest linear case, for speed of plotting
 
 for(i in 1:nmodel){
-abline(preds_lm2$boot_models[[i]],...)
+if(!is.numeric(preds_lm2$boot_models[[i]]) && !is.logical(preds_lm2$boot_models[[i]])) abline(preds_lm2$boot_models[[i]],...)
 }
 
 }else if(is.null(other.predictors)){ # retransformed bivariate model
@@ -357,11 +392,11 @@ abline(preds_lm2$boot_models[[i]],...)
 if(!sample.randres) { #if no random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}else{ #if random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}
 
 }else{ # retransformed multivariate model
@@ -369,10 +404,10 @@ curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m
 if(!sample.randres) { #if no random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}else{ #if random residuals should be added
 preds_lm2$boot_models[[i]]->m
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }
 }
 }##
