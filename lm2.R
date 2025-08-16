@@ -299,7 +299,9 @@ if(some_identical & !isometry.Null) message("Some bootstrap repetitions resulted
 #construct confidence intervals:
 ci<-c((1-level)/2,level+(1-level)/2)
 
-#retransform and apply smearing_factor, if desired
+#retransform and apply smearing_factor
+if(v) print(fit)
+if(v) print(retransform(fit))
 retransform(fit)*smearing_factor_main->fit
 retransform(fittedCI)*smearing_factors->fittedCI
 retransform(fittedPI)*smearing_factors->fittedPI
@@ -308,6 +310,8 @@ apply(X=fittedCI,MAR=2,FUN=quantile,probs=ci,na.rm=TRUE)->CI
 apply(X=fittedPI,MAR=2,FUN=quantile,probs=ci,na.rm=TRUE)->PI
 
 fit<-data.frame(fit=fit,lwr_CI=CI[1,],upr_CI=CI[2,],lwr_PI=PI[1,],upr_PI=PI[2,])
+}else{
+retransform(fit)*smearing_factor_main->fit
 }
 
 list(original_model=model,newdata=newdata,model_transformations=model_transformations,smearing_factor_main=smearing_factor_main)->out
@@ -333,6 +337,7 @@ return(out)
 #' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
 #' @param retransform function to back-transform predicted variable. If function is identity, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
 #' @param other.predictors named list() or data.frame() with values for other predictors (either constant or same number as n parameter used with curve.
+#' @param varname name for raw predictor variable (if transformations were applied so it does not match name of coefficient)
 #' @param predvar predictor variable, defaults to 2 (=slope of the bivariate intercept model)
 #' @param smearing.corr should smearing factor be applied (see predict.lm2)
 #' @param ... additional parameters to pass on to curve
@@ -341,7 +346,7 @@ return(out)
 #' @method plot lm2
 #' @importFrom stats predict weighted.mean
 #' @examples
-plot.lm2<-function(m,transform=identity,retransform=identity,other.predictors=NULL, predvar=2,smearing.corr=FALSE,...){
+plot.lm2<-function(m,varname=NULL,transform=identity,retransform=identity,other.predictors=NULL, predvar=2,smearing.corr=FALSE,...){
 match.call()->call
 #calculate smearing factor
 corr<-1
@@ -349,14 +354,18 @@ if(smearing.corr && "retransform" %in% names(call) && call$retransform!=substitu
 if("weights"%in%names(m)){corr<-weighted.mean(retransform(m$residuals),m$weights)}else{corr<-mean(retransform(m$residuals))}
 }
 
+#coefficient names
+nam<-names(m$coefficients)
+if(!is.null(varname)){nam[predvar]<-varname}
+
 ##plot models
 if(is.null(other.predictors)){ # retransformed bivariate model
 
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
 
 }else{ # retransformed multivariate model
 
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
 
 }
 }##
@@ -366,8 +375,9 @@ curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.pre
 ##plot.preds_lm2()
 #' plot the bootstrapped models from the output of predict.preds_lm2
 #' @param preds_lm2 an object of class "preds_lm2"
-#' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
-#' @param retransform function to back-transform predicted variable. If function is identity, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
+#' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed. Note that the function does not automatically transform the predictor, so you may need to specify the transformation used for the model here, even if you already fitted the model transformations inside the model formula. XXX
+#' @param varname name for raw predictor variable (if transformations were applied so it does not match name of coefficient)
+#' @param retransform function to back-transform predicted variable. If function is identity, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed.
 #' @param nmodel number of first nmodel models to plot, if NULL (default) all models are plotted
 #' @param other.predictors named list() or data.frame() with values for other predictors (either constant or same number as n parameter used with curve.
 #' @param predvar predictor variable, defaults to 2 (=slope of the bivariate intercept model)
@@ -377,9 +387,13 @@ curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.pre
 #' @method plot preds_lm2
 #' @importFrom stats predict
 #' @examples
-plot.preds_lm2<-function(preds_lm2,transform=identity,retransform=identity, nmodel=NULL,other.predictors=NULL, predvar=2,sample.randres=FALSE,...){
+plot.preds_lm2<-function(preds_lm2,varname=NULL,transform=identity,retransform=identity, nmodel=NULL,other.predictors=NULL, predvar=2,sample.randres=FALSE,...){
 match.call()->call
 if(is.null(nmodel)) length(preds_lm2$boot_models)->nmodel
+
+#coefficient names
+nam<-names(preds_lm2$original_model$coefficients)
+if(!is.null(varname)){nam[predvar]<-varname}
 
 if((("transform" %in%names(call) && call$transform==substitute(identity)) | !is.function(transform)) && ((("retransform" %in%names(call) && call$retransform==substitute(identity)) | !is.function(retransform))) && is.null(other.predictors) && !sample.randres && preds_lm2$smearing_factor_main==1){ #simplest linear case, for speed of plotting
 
@@ -392,11 +406,11 @@ if(!is.numeric(preds_lm2$boot_models[[i]]) && !is.logical(preds_lm2$boot_models[
 if(!sample.randres) { #if no random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]),bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}else{ #if random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),names(m$coefficients)[predvar]) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}
 
 }else{ # retransformed multivariate model
@@ -404,10 +418,10 @@ if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setN
 if(!sample.randres) { #if no random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}else{ #if random residuals should be added
 preds_lm2$boot_models[[i]]->m
-if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(names(m$coefficients)[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }
 }
 }##
