@@ -159,7 +159,7 @@ cov_mf_->fit$cov_matrix
 #' @param smearing.corr logical indicating whether Duan’s correction ("smearing factor") should be applied (only when regression uses transformed values).
 #' @param isometry.Null For cases where the bootstrap returns a dataset with a single effective observation, should isometry be used for the prediction (defaults to FALSE, which replaces these cases with NA).
 #' @param ... other arguments to pass on to lm2 (or other fitting function, if overridden)
-#' @return a list() object containing the original model and predicted values for newdata, as well as confidence intervals for newdata and (if bootstrap==TRUE) the bootstrapped model coefficients, residuals and confidence and prediction intervals for newdata
+#' @return if bootstrap==TRUE, a list() object containing the original model and predicted values for newdata, as well as confidence intervals for newdata and the bootstrapped model coefficients, residuals and confidence and prediction intervals for newdata. If bootstrap==FALSE, a numeric vector of fitted values for newdata.
 #' @export predict.lm2
 #' @method predict lm2
 #' @importFrom stats predict weighted.mean
@@ -173,7 +173,7 @@ cov_mf_->fit$cov_matrix
 #' ebar(lower=co$PI0.9[1,],upper=co$PI0.9[2,],x=co$newdata[,1],polygon=TRUE)
 #' abline(rmcf)
 
-predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=TRUE, level=0.9, reps=1000, sample.weights=FALSE, v=FALSE, fit.fun=lm2, smearing.corr=FALSE,isometry.Null=FALSE,...){
+predict.lm2<-function(model, newdata=NULL, autotransform=TRUE, retransform=identity, bootstrap=FALSE, level=0.9, reps=1000, sample.weights=FALSE, v=FALSE, fit.fun=lm2, smearing.corr=FALSE,isometry.Null=FALSE,...){
 #preparatory steps
 match.call()->call
 model$model->transformed_vars
@@ -326,8 +326,8 @@ out$retransformations_applied<-retransform
 }
 out$fit<-fit
 class(out)<-c("preds_lm2")
-
-return(out)
+if(bootstrap) return(out)
+if(!bootstrap) return(fit)
 }##
 
 

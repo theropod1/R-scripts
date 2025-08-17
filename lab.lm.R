@@ -175,7 +175,7 @@ if(RMSE) text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), rmse,...)##plot root 
 #' @param testingx predictor variables for testing data (if desired) as either a numeric vector or data.frame containing data for which to make predictions
 #' @param predvars names of predictor variables, if not already present in testingx
 #' @param verbose logical indicating whether to return mean PPE (if FALSE, default) or dataframe with all fitted and predicted values
-#' @param transformation Transformation to use on yfitted and yobserved
+#' @param transformation Transformation to use on yfitted and yobserved, if desired (defaults to identity, i.e. no transformation)
 #' @return The mean PPE or a data.frame() containing all fitted and observed values and their respective PPEs
 #' @export PPE
 #' @examples
@@ -187,6 +187,52 @@ if(RMSE) text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), rmse,...)##plot root 
 #' ci.lm(m)
 #' PPE(m)
 
+
+PPE<-function(yfitted, yobserved=NULL, testingx=NULL, predvars=NULL, verbose=FALSE, transformation=identity){
+yfitted->yfit0
+if(inherits(yfitted,"lm")){ #if model is supplied, automatically do the rest
+yfit0$fitted.values->yfitted
+
+if(!is.null(testingx) && !is.null(yobserved)){
+
+if(is.null(predvars)) names(yfitted$coefficients)->predvars
+if("(Intercept)" %in% predvars) predvars<-predvars[which(predvars!="(Intercept)")]
+if(is.data.frame(testingx)){
+if(any(!(predvars%in%colnames(testingx)))) colnames(testingx)<-predvars[1:ncol(testingx)]
+}else if(is.numeric(testingx)){
+data.frame(x=testingx)->testingx
+colnames(testingx)<-predvars
+}else{stop("testingx must be NULL, dataframe or numeric")}
+
+predict(yfit0,testingx)->yfitted
+if(is.list(yfitted)) yfitted$fit->yfitted #for compatibility with different predict variants that return more than single vectors
+if(is.data.frame(yfitted)) yfitted[,1]->yfitted
+
+}else{
+yfit0$fitted.values+yfit0$residuals->yobserved
+}
+
+}
+if(is.null(yobserved)) stop("yobserved is null, but yfitted was no model to make predictions on")
+#else or if raw data are supplied
+transformation(yfitted)->yfitted
+transformation(yobserved)->yobserved
+
+(yfitted-yobserved)/yobserved*100 -> PPE
+abs(PPE) -> PPE
+
+if(verbose){
+    if(is.null(testingx)) return(data.frame(yfitted,yobserved,PPE))
+    if(!is.null(testingx)) return(data.frame(testingx,yfitted,yobserved,PPE))
+}else{
+    return(mean(PPE))
+}
+}
+
+
+
+#################
+if(1==2){##deprecated version
 PPE<-function(yfitted=NULL,yobserved=NULL, testingx=NULL,predvars=NULL,verbose=FALSE, transformation=NULL){
 yfitted->yfit_backup
 
@@ -207,10 +253,9 @@ colnames(testingx)<-predvars
 }else{stop("testingx must be NULL, dataframe or numeric")}
 
 predict(yfitted, testingx)->yfitted
-
 }
-
 yfit_backup$fitted.values+yfit_backup$residuals->yobserved
+
 }
 
 #PPE = (Predicted Value - Actual Value) / Actual Value| * 100
@@ -228,3 +273,4 @@ if(verbose){return(data.frame(yfitted,yobserved,PPE))}else{
 return(mean(PPE))}
 
 }##
+}
