@@ -477,30 +477,20 @@ return(out)
 #' @param x vector of values for which to compute weighted parameter
 #' @param w vector of weights
 #' @param na.rm default TRUE
+#' @param s compute sample standard deviation, default TRUE
 #' @export wsd
 #' @return the weighted standard deviation (or variance, or mean)
-wsd <- function(x, w=rep(1,length(x)), na.rm=TRUE) {
+wsd <- function(x, w=rep(1,length(x)), na.rm=TRUE,s=TRUE) {
 if(na.rm){which(!is.na(x) & !is.na(w))->indices
 x[indices]->x
 w[indices]->w}
+if(any(w<0)) warning("some weights were <0")
 	wm <- sum(w * x) / sum(w) #wtd.mean
-	variance <- sum(w * (x - wm)^2) / (sum(w) - sum(w^2) / sum(w)) #wtd.var
-	sqrt(variance) #wtd.st
+#	variance <- sum(w * (x - wm)^2) / (sum(w) - sum(w^2) / sum(w)) #wtd.var
+variance <- sum(w * (x - wm)^2) / (sum(w) - 1) #wtd.var
+if(!s) variance <- sum(w * (x - wm)^2) / sum(w) #wtd.var
+	sqrt(variance) #wtd.stdev
 }
-
-## function rsq()
-#' compute the weighted r.squared of a model
-#' @param model model for which r.squared should be calculated
-#' @param weighted logical indicating whether weights should be taken into account, if available in model$weights
-#' @export wsd
-#' @return the (weighted) r.squared of the model
-rsq<-function(model,weighted=TRUE){
-if("weights"%in%names(model) & weighted){
-1-wsd(model$residuals,model$weights)^2/wsd(model$model[,1],model$weights)^2
-}else{
-1-wsd(model$residuals)^2/wsd(model$model[,1])^2
-}
-}##
 
 ##summary.lm2
 #' Summary method for lm2 objects output by lm2()

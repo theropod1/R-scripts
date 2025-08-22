@@ -94,7 +94,7 @@ return(anc_/max(ape::node.depth.edgelength(phy)))
 #' @param taxon vector of taxon name (or column of data containing it)
 #' @param retransform back-transformation to apply to values before calculating mean square error. Defaults to 10^x (for retransforming log10()-transformed data), if no retransformation should happen, specify identity here.
 #' @param v verbosity setting. if v==TRUE, function returns a data frame with all original data, fitted values from the base and OU-weighted model, and error terms for each estimate.
-#' @param return which value to return, defaults to "MSQ" for Mean Squared Error, alternative setting: "PPE" (Mean percent prediction error)
+#' @param return which value to return, defaults to "MSE" for Mean Squared Error, alternative settings: "RMSE" (root mean square error) or "PPE" (Mean percent prediction error)
 #' @param ... additional arguments to pass on to predict(), e.g. retransform and smearing.corr, if desired
 #' @return if v==FALSE (default), the mean square error at the chosen alpha value
 #' @export alpha_error
@@ -102,7 +102,7 @@ return(anc_/max(ape::node.depth.edgelength(phy)))
 #' \dontrun{ alpha_error(alpha=0.08,formula=log10_fl~log10_tl, data=CLP, phy=tree0, taxa=CLP$taxon,v=FALSE) }
 
 ##calculate the mean square error for a given alpha value
-alpha_error<-function( alpha, formula, data, phy, taxa=taxon, fit.fun=lm2, retransform=function(x){10^x}, return="MSQ", v=FALSE, smearing.corr=FALSE) {
+alpha_error<-function( alpha, formula, data, phy, taxa=taxon, fit.fun=lm2, retransform=function(x){10^x}, return="MSE", v=FALSE, smearing.corr=FALSE) {
 match.call()->call
 
   if(!is.null(data)){mf <- model.frame(formula, data, na.action=na.pass)
@@ -143,10 +143,11 @@ results<-data.frame( taxa,response=retransform(mf[,1]),retransform(mf[,-1]),no_f
 
 list()->out
 
-out$MSQ<-mean(results$squerr_focal,na.rm=TRUE)
+out$MSE<-mean(results$squerr_focal,na.rm=TRUE)
+out$RMSE<-sqrt(out$MSE)
 out$PPE<-mean(abs(results$err_focal/response)*100,na.rm=TRUE)
 
-message("alpha =", alpha,"--> MSQE =", out$MSQ,",--> PPE =", out$PPE) #to give status update during optimization procedures
+message("alpha =", alpha,"--> MSE =", out$MSE,"--> RMSE =", out$RMSE,",--> PPE =", out$PPE) #to give status update during optimization procedures
 
 if(any(is.na(results$squerr_focal)) & v) message("NOTE: some square errors were NA. This is normal if your data contained rows lacking predictors")
 
