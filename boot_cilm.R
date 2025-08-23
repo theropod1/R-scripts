@@ -130,7 +130,7 @@ invisible(out)
 #' @param fun function to apply across reps
 #' @param level desired confidence level
 #' @param reps number of bootstrap repetitions
-#' @param CI logical whether to return CI (otherwise all results are returned as a vector)
+#' @param CI logical whether to return CI (if TRUE, default), all results as a vector (if FALSE), or otherwise a summary function to apply to the resampled function results (e.g. mean)
 #' @param wt optional vector of weights (defaults to equal weighting of all values in x), must be same length as x
 #' @param ... other arguments to pass on to fun
 #' @details computes a bootstrap confidence interval for the result of any function that can be applied to a resampling of x
@@ -142,14 +142,61 @@ upr<-1-(1-level)/2
 lwr<-0+(1-level)/2
 
 if(length(wt)!=length(x)) rep(wt,length(x))[1:length(x)]->wt
-wt[which(!is.na(x))]->wt
-x[which(!is.na(x))]->x
+!is.na(x)->notnas
+x[notnas]->x
+wt[notnas]->wt
 
-if(!is.null(fun)) replicate(reps,fun(sample(x,length(x),replace=TRUE,prob=wt),...))->x_
-if(is.null(fun)) replicate(reps,sample(x,length(x),replace=TRUE,prob=wt),...)->x_
+if(!is.null(fun)){
+if("..."%in%names(formals(fun))){
+replicate(reps,fun(sample(x,length(x),replace=TRUE,prob=wt),...))->x_}else{
+replicate(reps,fun(sample(x,length(x),replace=TRUE,prob=wt)))->x_
+}
+}else{replicate(reps,sample(x,length(x),replace=TRUE,prob=wt),...)->x_}
 
-if(CI==FALSE){return(x_)
-}else{quantile(x_,c(lwr,upr))->ci
-return(ci)}
+if(!is.function(CI) && CI==FALSE){return(x_)
+}else if(!is.function(CI) && CI==TRUE){
+quantile(x_,c(lwr,upr))->ci
+return(ci)
+}else if(is.function(CI)){
+return(CI(x_))
+}
+}
+##
+
+
+##function: p_bootCI()
+#"pseudobootstrap" CI, randomly samples n entries reps times and returns the results of fun, or the quantiles for a confidence interval at the given level for them. Useful for demonstrating the results of small samples on conclusions or to artificially "downsample" larger sample for comparative purposes.
+#'
+#' @param x univariate dataset for which to calculate CI
+#' @param fun function to apply across reps
+#' @param level desired confidence level
+#' @param n number of values to draw in each bootstrap repetition
+#' @param reps number of bootstrap repetitions
+#' @param CI logical whether to return CI (if TRUE, default), all results as a vector (if FALSE), or otherwise a summary function to apply to the resampled function results (e.g. mean)
+#' @param wt optional vector of weights (defaults to equal weighting of all values in x), must be same length as x
+#' @param ... other arguments to pass on to fun
+#' @details computes a confidence interval for the result of any function that can be applied to a resampling of n values from the vector x
+#' @return either a numeric of length 2 giving the confidence interval at the desired confidence level, or a numeric vector of length reps containing every individual result of fun
+#' @export p_bootCI
+p_bootCI<-function(x,fun,level=0.9, n=10,reps=1000, CI=TRUE,wt=1,...){
+upr<-1-(1-level)/2
+lwr<-0+(1-level)/2
+
+if(length(wt)!=length(x)) rep(wt,length(x))[1:length(x)]->wt
+!is.na(x)->notnas
+x[notnas]->x
+wt[notnas]->wt
+
+if("..."%in%names(formals(fun))){
+replicate(reps,fun(sample(x,n,replace=TRUE,prob=wt),...))->x_}else{
+replicate(reps,fun(sample(x,n,replace=TRUE,prob=wt)))->x_}
+
+if(!is.function(CI) && CI==FALSE){return(x_)
+}else if(!is.function(CI) && CI==TRUE){
+quantile(x_,c(lwr,upr))->ci
+return(ci)
+}else if(is.function(CI)){
+return(CI(x_))
+}
 }
 ##
