@@ -37,12 +37,12 @@ lm2 <- function(formula, data=NULL, v=FALSE, method="tofallis",w=1) {
   }else{
   mf <- model.frame(formula, na.action=na.pass)
   }
-# print(mf) #for troubleshooting
+if(v) print(mf) #for troubleshooting
   
   has_intercept <- attr(terms(mf), "intercept") == 1
 	if(v)  message("Has intercept?", has_intercept)
   
-  if(length(w)!=nrow(data)) rep(w,nrow(mf))[1:nrow(mf)]->w
+  if(length(w)!=nrow(mf)) rep(w,nrow(mf))[1:nrow(mf)]->w
   if(any(is.na(w))) w[which(is.na(w))]<-0
  
 	w<-w[complete.cases(mf)]
@@ -327,7 +327,7 @@ out$retransformations_applied<-retransform
 out$fit<-fit
 class(out)<-c("preds_lm2")
 if(bootstrap) return(out)
-if(!bootstrap) return(fit)
+if(!bootstrap) return(list(fit=fit))
 }##
 
 
@@ -357,15 +357,25 @@ if("weights"%in%names(m)){corr<-weighted.mean(retransform(m$residuals),m$weights
 #coefficient names
 nam<-names(m$coefficients)
 if(!is.null(varname)){nam[predvar]<-varname}
-
+#message("preds for",nam[predvar],"in",nam)
 ##plot models
 if(is.null(other.predictors)){ # retransformed bivariate model
+predict(m, newdata=setNames(data.frame(transform(1)),nam[predvar]) , bootstrap=FALSE)->ctrl
 
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
+if(!is.null(names(ctrl)) && "fit"%in%names(ctrl)){ 
+	curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]) , bootstrap=FALSE)$fit)*corr, add=TRUE,...)
+}else{
+	curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]) , bootstrap=FALSE))*corr, add=TRUE,...)
+}
 
 }else{ # retransformed multivariate model
+predict(m, newdata=setNames(data.frame(transform(1),transform(other.predictors[1,])),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)->ctrl
 
-curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
+if(!is.null(names(ctrl)) && "fit"%in%names(ctrl)){ 
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x),transform(other.predictors)),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*corr, add=TRUE,...)
+}else{
+curve( retransform( predict(m, newdata=setNames(data.frame(transform(x),transform(other.predictors)),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE) )*corr, add=TRUE,...)
+}
 
 }
 }##
