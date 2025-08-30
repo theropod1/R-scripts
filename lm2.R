@@ -334,7 +334,7 @@ out$retransformations_applied<-retransform
 out$fit<-fit
 class(out)<-c("preds_lm2")
 if(bootstrap) return(out)
-if(!bootstrap) return(list(fit=fit))
+if(!bootstrap) return(fit)
 }##
 
 
@@ -423,11 +423,11 @@ if(!is.numeric(preds_lm2$boot_models[[i]]) && !is.logical(preds_lm2$boot_models[
 if(!sample.randres) { #if no random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]),bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]),bootstrap=FALSE))*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}else{ #if random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x)),nam[predvar]) ,bootstrap=FALSE)+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}
 
 }else{ # retransformed multivariate model
@@ -435,10 +435,10 @@ if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setN
 if(!sample.randres) { #if no random residuals should be added
 for(i in 1:nmodel){
 preds_lm2$boot_models[[i]]->m
-if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x),transform(other.predictors))),c(nam[predvar],names(other.predictors))) , bootstrap=FALSE)*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }}else{ #if random residuals should be added
 preds_lm2$boot_models[[i]]->m
-if(!is.numeric(m) && !is.logical(m)) curve( retransform( predict(m, newdata=setNames(data.frame(transform(x,other.predictors)),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)$fit+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
+if(!is.numeric(m) && !is.logical(m)) curve( (retransform( predict(m, newdata=setNames(data.frame(transform(x),transform(other.predictors))),c(nam[predvar],names(other.predictors))) ,bootstrap=FALSE)+preds_lm2$random_residual[i])*preds_lm2$boot_smearing_factors[i], add=TRUE,...)
 }
 }
 }##
