@@ -197,14 +197,30 @@ model_transformations <- setNames( #extract transformations applied to variables
   }),
   term_labels
 )
+INT<-TRUE
+if(!any(names(model$coefficients) == "(Intercept)")) INT<-FALSE #test if model has intercept
+
+smearing_factor_main<-1
+if(smearing.corr & "weights"%in%names(model)) smearing_factor_main<-weighted.mean(retransform(model$residuals),model$weights)
+if(smearing.corr & !("weights"%in%names(model))) smearing_factor_main<-mean(retransform(model$residuals))
+
+model_<-model
+##make sure model_ coefficients have right order
+if(!INT){ model_$coefficients<-c("(Intercept)"=0, model$coefficients) #make sure first model parameter is intercept, even if it is not returned by default
+}else if(which(names(model$coefficients) == "(Intercept)")!=1){ model_$coefficients<-c("(Intercept)"=model$coefficients[which(names(model$coefficients) == "(Intercept)")], model$coefficients[-which(names(model$coefficients) == "(Intercept)")]) #make sure first model parameter is the intercept, even if it is not returned as the first parameter
+}
 
 ##adjust newdata transformations and names
 if(!is.null(newdata)){#transform newdata
 if(!autotransform){
-as.data.frame(newdata[,names(model$coefficients)[-1]])->newdata
+as.data.frame(newdata[,names(model_$coefficients)[-1]])->newdata
+if(!INT) as.data.frame(newdata[,names(model_$coefficients)])->newdata
+
 }
 if(autotransform){
 as.data.frame(newdata[,raw_vars[-1]])->newdata
+if(!INT) as.data.frame(newdata[,raw_vars])->newdata
+
 for(i in 1:ncol(newdata)){newdata[,i]<-model_transformations[[i]](newdata[,i])}#apply transformation functions
 }
 
@@ -214,18 +230,9 @@ newdata<-as.data.frame(transformed_vars[,-1])
 colnames(newdata)<-names(model$coefficients)[-1]
 if(v) print(head(newdata))
 
+
 ##predict best-fit values
 fit<-numeric()
-
-smearing_factor_main<-1
-if(smearing.corr & "weights"%in%names(model)) smearing_factor_main<-weighted.mean(retransform(model$residuals),model$weights)
-if(smearing.corr & !("weights"%in%names(model))) smearing_factor_main<-mean(retransform(model$residuals))
-
-model_<-model
-
-if(!any(names(model$coefficients) == "(Intercept)")){ model_$coefficients<-c("(Intercept)"=0, model$coefficients) #make sure first model parameter is intercept, even if it is not returned by default
-}else if(which(names(model$coefficients) == "(Intercept)")!=1){ model_$coefficients<-c("(Intercept)"=model$coefficients[which(names(model$coefficients) == "(Intercept)")], model$coefficients[-which(names(model$coefficients) == "(Intercept)")]) #make sure first model parameter is the intercept, even if it is not returned as the first parameter
-}
 
 for(i in 1:nrow(newdata)) fit[i]<-model_$coefficients[1]+sum(model_$coefficients[-1]*newdata[i,])
 
