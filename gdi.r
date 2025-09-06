@@ -332,7 +332,7 @@ return(depthscenters)
 #' @param dors Measurements of diameter in dorsal view/second of two orthogonal views to be used with the gdi. Can be either a numeric vector, a data.frame (output of measuresil(...,return="all") with a collumn named "diameter", or a text file with diameter measurements to be scanned. Must be the same length as lat.
 #' @param indices Optional indices specifying a subset of the silhouette measurement vectors to be analyzed. Useful if separate segment calculations are desired.
 #' @param scale Scale of the data, given in terms of how many units of the input data (e.g. pixels) are in one side of the desired unit of output volume. Defaults to 10.
-#' @param sliceL Length of individual segments to be used in the GDI. Defaults to 1/scale.
+#' @param sliceL Length of individual segments to be used in the GDI. Defaults to 1.
 #' @param method Method to be used for the GDI. Default "raw" setting calculates each segment as an elliptical cylinder with volume = Area * SliceL. Any other string will result in volume being calculated as an elliptical frustum with base areas based on the measurements of segments i and i+1.
 #' @param k Superellipse exponent to be used for the cross-sectional area. Defaults to 2.0 (normal ellipse).
 #' @param corr Correction factor for area of cross-sections, calculated as the ratio between the actual cross-sectional area and that of a (super)ellipse (depending on the specified exponent k) with the same diameters. This setting enables the function to account for complex, non-elliptical cross-sections. Default value is 1, i.e. no correction. Can be either a single number, or a numeric vector of the same length as lat and dors (in the case of a changing cross-sectional geometry along the length of the body).
@@ -347,7 +347,7 @@ return(depthscenters)
 #' gdi(lat=lateral, dors=lateral/2, scale=10, method="smooth", k=2.3)
 
 
-gdi<-function(lat, dors, indices=NULL, scale=10, sliceL=1/scale, method="raw", k=2.0, corr=1, smooth.ends=FALSE, return="total"){
+gdi<-function(lat, dors, indices=NULL, scale=10, sliceL=1, method="raw", k=2.0, corr=1, smooth.ends=FALSE, return="total"){
 lat_<-lat
 dors_<-dors
 
@@ -367,15 +367,16 @@ if(is.data.frame(dors)){
     dors_<-dors$diameter
 }
 #make data.frame
-sil<-data.frame(ydiam_raw=lat_,zdiam_raw=dors_,ydiam_scaled=lat_/scale,zdiam_scaled=dors_/scale, slice_length=sliceL)#scale-adjust and save in dataframe
+sil<-data.frame(ydiam_raw=lat_,zdiam_raw=dors_,ydiam_scaled=lat_/scale,zdiam_scaled=dors_/scale, slice_length=sliceL/scale, sliceL_raw=sliceL)#scale-adjust and save in dataframe
+sliceL/scale->sliceL
 
 if(return!="total"){
-#save segment centroid positions
+#save raw segment centroid positions on the x (anteroposterior) axis
 ##x
-sil$x_center<-sil$slice_length*scale/2
-l<-cumsum(sil$x_center*2)
+sil$x_center<-sil$sliceL_raw/2#half the raw sliceL
+l<-cumsum(sil$x_center*2)#cumulative length of all slices
 if(length(sil$x_center)>1){
-for(i in 2:length(sil$x_center)){
+for(i in 2:length(sil$x_center)){#for each segment, subtract half the segment length from the cumulative segment length to get the segment center
 sil$x_center[i]<-l[i]-sil$x_center[i]
 }}
 
@@ -418,7 +419,7 @@ attr(sil, "z_resolution")<-attr(dors, "y_resolution")
 
 
 sum(sil$V)->res#sum up segments
-names(res) <- paste("x_dim",sum(sil$ydiam_raw!=0)/scale, "units", sep="_")
+names(res) <- paste("x_dim",sum(sil$slice_length[sil$ydiam_raw!=0]), "units", sep="_")
 
 if(return=="total"){
 return(res)
@@ -652,6 +653,62 @@ return(weighted.mean(y_center, w=masses, na.rm=TRUE)/scale)
 }
 
 
+##Function expandConvexHull()
+#' Estimate soft tissue expansion factors following Macaulay et al. 2023
+#'
+#' @param volume Numeric value containing volume of the convex hull (in liters). Defaults to NULL, in which case an isometric expansion factor is always returned. Setting for this parameter is ignored if method=="isometry"
+#' @param method Method to use for deriving soft tissue expansion factor. Possible optios are "isometry" (default), "OLS" or "PGLS".
+#' @param taxon Taxon whose specific regressions or expansion factors to use, can be "Croc_Lizard" for the expansions based on Crocodilians and Squamates, "Bird" for expansions based on birds of "All" for the pooled (allometric) or averaged (isometric) expansions.
+#' @param segment Body segment for which expansion factor should be calculated. Possible options are: "Head", "Neck", "Trunk", "Tail", "Humerus", "Forearm", "Hand", "Thigh", "Shank", "MT" or "Pes"
+#' @return A single numeric, containing the calculated expansion factor
+#' @export expandConvexHull
+#' @details This function returns a soft tissue expansion factor, calculated as the quotient of the skin volume and minimum convex hull volume of the selected body segment. This is based on expansion factors and regressions for birds and non-avianreptiles from Macaulay et al. 2023 (<10.1038/s41467-023-37317-y>). OLS and PGLS estimate the body volume allometrically following supplements 3, 4 and 5 of Macaulay et al., while isometry returns an isometric expansion factor following supplement 6. The body segment "Tail" should not be used in conjunction with the taxon "Bird", due to the absence of tails in this group – if this occurs nonethemess, an expansion factor of 1 is returned.
+#' @examples
+#' expandConvexHull(50,"isometry",taxon="Croc_Lizard",segment="Trunk")
+
+expandConvexHull<-function(volume=NULL,method="isometry",taxon="Croc_Lizard",segment="Trunk"){
+
+if(method%in%c("isometry","iso","Isometry","Iso") | is.null(volume)){
+##isometric expansions
+iso<-data.frame(Croc_Lizard=c(1.266, 8.646, 1.219, 3.369, 2.852, 2.866, 3.564, 5.102, 2.655, 3.494, 2.553),Bird=c(1.008, 3.825, 1.436, 1, 1.97, 1.736, 1.303, 4.538, 1.729, 0.792, 1.716))
+iso$all<-c(1.137,6.235,1.328,3.369,2.411,2.301,2.434,4.820,2.192,2.143,2.135)
+rownames(iso)<-c('Head', 'Neck', 'Trunk', 'Tail', 'Humerus', 'Forearm', 'Hand', 'Thigh', 'Shank', 'MT', 'Pes')
+
+F_expansion<-iso[segment,taxon]
+if(!(method%in%c("isometry","iso"))) warning("Selected method was NOT isometry, but no volume was provided; returning isometric expansion factor.")
+}
+
+if(method=="OLS"){
+##allometric expansions OLS
+if(taxon%in%c("Croc_Lizard","croc_lizard","Reptile","reptile")) ols_expansions<-data.frame(intercept=c(0.002, 0.73, 0.2, 0.387, 0.888, 0.677, 1.127, 0.951, 0.788, 0.908, 0.745),slope=c(0.978, 0.961, 1.039, 0.984, 1.09, 1.045, 1.106, 1.051, 1.075, 1.074, 1.067))
+if(taxon%in%c("bird","Bird","Aves","avian","Avian")) ols_expansions<-data.frame(intercept=c(-0.085, 0.008, 0.213,0, 0.001, 0.017, 0.124, 0.487, 0.322, -0.402, 0.21),slope=c(0.982, 0.892, 1.018,1, 0.95, 0.963, 1.012, 0.975, 1.021, 0.946, 1.002))
+if(taxon%in%c("all","All")) ols_expansions<-data.frame(intercept=c(-0.085, 0.008, 0.213, 0.001, 0.017, 0.124, 0.487, 0.322, -0.402, 0.21),slope=c(0.982, 0.892, 1.018,1, 0.95, 0.963, 1.012, 0.975, 1.021, 0.946, 1.002))
+rownames(ols_expansions)<-c('Head', 'Neck', 'Trunk', 'Tail', 'Humerus', 'Forearm', 'Hand', 'Thigh', 'Shank', 'MT', 'Pes')
+
+expansion_function<-function(x){exp(ols_expansions[segment,"slope"]*log(volume)+ols_expansions[segment,"intercept"])}
+
+F_expansion<-expansion_function(volume)/volume
+}
+
+if(method=="PGLS"){
+##allometric expansions PGLS
+if(taxon%in%c("Croc_Lizard","croc_lizard","Reptile","reptile")) pgls_expansions<-data.frame(intercept=c(0.32, 0.711, 0.3, 0.27, 0.673, 0.795, 0.935, 1.013, 0.934, 0.941, 1.083),slope=c(1.052, 0.956, 1.076, 0.959, 1.047, 1.065, 1.072, 1.063, 1.107, 1.08, 1.134))
+if(taxon%in%c("bird","Bird","Aves","avian","Avian")) pgls_expansions<-data.frame(intercept=c(-0.084, -0.048, 0.178,0, 0.03, 0.08, 0.128, 0.524, 0.33, -0.399, 0.228),slope=c(0.981, 0.879, 1.004,1, 0.951, 0.97, 1.01, 0.981, 1.023, 0.947, 1.003))
+if(taxon%in%c("all","All")) pgls_expansions<-data.frame(intercept=c(-0.054, -0.063, 0.173,0, 0.006, 0.072, 0.115, 0.507, 0.324, -0.4, 0.219),slope=c(0.981, 0.876, 1.005,1, 0.95, 0.967, 1.011, 0.978, 1.021, 0.946, 1.009))
+
+rownames(pgls_expansions)<-c('Head', 'Neck', 'Trunk', 'Tail', 'Humerus', 'Forearm', 'Hand', 'Thigh', 'Shank', 'MT', 'Pes')
+
+expansion_function<-function(x){exp(pgls_expansions[segment,"slope"]*log(volume)+pgls_expansions[segment,"intercept"])}
+
+F_expansion<-expansion_function(volume)/volume
+}
+
+return(F_expansion)
+
+#Source: SuppData 4, 5 and 6 of Macaulay, S., Hoehfurtner, T., Cross, S.R.R., Marek, R.D., Hutchinson, J.R., Schachner, E.R., Maher, A.E., and Bates, K.T. 2023. Decoupling body shape and mass distribution in birds and their dinosaurian ancestors. Nature Communications: 14:1575. https://doi.org/10.1038/s41467-023-37317-y.
+}
+##
+
 
 ##Function plot_sil()
 #' Plots a silhouette read by measuresil()
@@ -659,6 +716,7 @@ return(weighted.mean(y_center, w=masses, na.rm=TRUE)/scale)
 #' @param sil A data frame that is the output of measuresil(..., return="all"), containing the center and the diameter of the silhouette at each value for x.
 #' @param flip Logical indicating whether to flip axes (needed if measuresil() was performed using align="v", defaults to FALSE.
 #' @param add Logical indicating whether to add silhoutte to an existing plot (defaults to FALSE)
+#' @param expansion Numeric containing expansion factor to multiply with body diameters. Defaults to 1 (i.e. no expansion). XXX
 #' @param xoffset Optional value by which to shift the silhouette on the x axis
 #' @param yoffset Optional value by which to shift the silhouette on the y axis
 #' @param alpha Opacity value for fill of polygon (defaults to 1)
@@ -682,7 +740,9 @@ return(weighted.mean(y_center, w=masses, na.rm=TRUE)/scale)
 #' measuresil(file.path(fdir,"exdata","lat.png"), return="all")->lat_
 #' plot_sil(lat_)
 
-plot_sil<-function(sil, flip=FALSE, add=FALSE, xoffset=0, yoffset=0,alpha=1, col="grey", border="darkgrey", scale=1, xlab="", ylab="",...){
+plot_sil<-function(sil, flip=FALSE, add=FALSE, expansion=1, xoffset=0, yoffset=0,alpha=1, col="grey", border="darkgrey", scale=1, xlab="", ylab="",...){
+
+sil$diameter*expansion->sil$diameter#adjust diameters by expansion factor
 
 if(flip==FALSE){
 x<-c(1:nrow(sil),rev(1:nrow(sil)))+xoffset
