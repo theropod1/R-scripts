@@ -11,6 +11,16 @@ return(out)
 }
 ##
 
+##cc()
+#' like c(), but always converts the final result to character()
+#' @param ... arguments to pass on to c
+#' @return character vector of c(...)
+#' @export cc
+
+cc<-function(...){as.character(c(...))}##
+
+
+
 ##freplace()
 #' replace several values of x with replacements
 #' @param x vector in which to perform substitution
