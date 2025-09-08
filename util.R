@@ -77,6 +77,59 @@ return(x)
 ##
 
 
+##words()
+#' subdivide string into words and return a vector
+#' @param x character string
+#' @param sep word separator character string
+#' @return character vector of words in x
+#' @export words
+words<-function(x, sep=" "){#converts words in a string to a vector
+strsplit(x, sep)[[1]]
+}##
+
+
+##word()
+#' return a specific word from each in a vector of character strings
+#' @param x character vector
+#' @param sep word separator in the strings in character vector
+#' @param n which word to return from each string, can be a numeric or "last" (default)
+#' @return character vector of nth word in each string in x
+#' @export word
+word<-function(x, sep=" ", n="last",...){#extracts word n (or "last" for last word of each) from a string.
+if(length(sep)<length(x)) rep(sep,length(x))->sep
+if(length(n)<length(x)) rep(n,length(x))->n
+out<-numeric()
+for(i in 1:length(x)){
+if(length(strsplit(x[i], sep,...)[[1]])==1){out[i]<-x[i]}else{
+n[i]->n_
+if(n[i]=="last") n_<-length(strsplit(x[i], sep,...)[[1]])
+strsplit(x[i], sep[i])[[1]]->t
+t[as.numeric(n_)]->out[i]
+}
+}
+return(out)
+}##
+
+##italicize()
+#' italicize each string in a character vector
+#' @param text character vector
+#' @param fun name of formatting function to apply, default to "italic"
+#' @return character vector with each string italicize
+#' @export italicize
+italicize<-function(text,fun="italic"){
+parse(text = paste0(fun,"('", text, "')"))
+}
+
+##capitalize()
+#' capitalize each string in a character vector
+#' @param x character vector
+#' @param fun function to apply to first letter, defaults to toupper (could also be tolower, to un-capitalize words)
+#' @return character vector with each string capitalized
+#' @export capitalize
+
+capitalize <- function(x,fun=toupper) {
+  paste0(fun(substring(x, 1, 1)), substring(x, 2))
+}
 
 ##M()
 #' Calculate a na-removing mean of any given number of values

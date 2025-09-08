@@ -19,7 +19,8 @@
 draw_chull<-function(x,y=NULL, subset=NULL, fac=NULL, color=ggcol, border=color, lwd=1, lty=1, alpha=0.5,legend=FALSE,...){
 #define base function:
 draw_chull_<-function(x,y=NULL, subset=NULL,...){
-if(is.data.frame(x)){
+
+if(is.data.frame(x) | is.matrix(x)){
 if(!is.null(subset)) x<-x[subset,]
 
 chull(x)->ind
@@ -56,7 +57,7 @@ lwd<-rep(lwd,n(levels(fac)))[1:n(levels(fac))]
 lty<-rep(lwd,n(levels(fac)))[1:n(levels(fac))]
 
 for(i in 1:length(levels(fac))){
-draw_chull_(x=x,y=y,subset=which(fac==levels(fac)[i]), col=add.alpha(color[i],alpha), border=border[i], lwd=lwd, lty=lty,...)
+if(length(which(fac==levels(fac)[i]))>2) draw_chull_(x=x,y=y,subset=which(fac==levels(fac)[i]), col=add.alpha(color[i],alpha), border=border[i], lwd=lwd, lty=lty,...)
 }
 
 
