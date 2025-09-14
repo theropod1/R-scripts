@@ -204,6 +204,22 @@ else return(FALSE)
 #' @export between
 between<-function(x,between) x<=max(between) & x>=min(between)
 
+
+##overlaps()
+#' test if x overlaps an interval
+#' @param x numeric vector of length 2 (longer vectors are coerced using range())
+#' @param between numeric vector giving interval to compare x to
+#' @return a logical indicating whether x overlaps the range of between
+#' @export overlaps
+overlaps<-function(x,between){
+range(between)->between
+out<-FALSE
+if(any(between(x,between))) out<-TRUE
+if(max(x)>=max(between) & min(x)<=min(between))  out<-TRUE
+return(out)
+}
+
+
 ##fls()
 #' return a vector with file names in current working directory
 #' @param pattern optional pattern to filter for in file names that are returned
@@ -215,5 +231,19 @@ list.files()->l
 if(!is.null(pattern)) return(l[grep(pattern,l,...)])
 if(is.null(pattern)) return(l)
 
+}
+
+##exists_()
+#' implementation of exists() that works on vectors
+#' @param x character vector of object names whose existence to test
+#' @param ... other arguments to pass to exists()
+#' @return logical vector containing TRUE/FALSE statements whether objects named in x exist in current workspace
+#' @export exists_
+exists_<-function(x,...){
+logical()->out
+for(i in 1:length(x)){
+exists(x[i],...)->out[i]
+}
+return(out)
 }
 
