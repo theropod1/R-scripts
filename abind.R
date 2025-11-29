@@ -28,7 +28,7 @@ which(dim2!=dim2[1])->drop2
 intersect(drop1,drop2)->drop
 which(!(c(1:length(args_)%in%drop)))->keep
 message("keeping arrays: ",listout(keep),", dropping arrays: ",listout(drop))
-dim3[keep]->dim3_#updated third dimensions, with dripped arrays removed
+dim3[keep]->dim3_#updated third dimensions, with dropped arrays removed
 
 #empty array
 array(NA, dim=c(dim1[1],dim2[1],sum(dim3_)))->out_arr
