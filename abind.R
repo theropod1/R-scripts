@@ -9,7 +9,7 @@ abind<-function(...){
 list(...)->args
 #only keep elements in ... that are arrays
 list()->args_
-for(i in 1:length(args)) if(is.array(args[[i]])) args_<-c(args_,list(args[[i]]))
+for(i in 1:length(args)) if(is.array(args[[i]]) | is.matrix(args[[i]])) args_<-c(args_,list(args[[i]]))
 
 #save dimensions for each array
 dim1<-numeric()
@@ -17,9 +17,10 @@ dim2<-numeric()
 dim3<-numeric()
 for(i in 1:length(args_)){
 as.numeric(dim(args_[[i]]))->dimensions
+#message(length(dimensions))
 dimensions[1]->dim1[i]
 dimensions[2]->dim2[i]
-dimensions[3]->dim3[i]
+if(length(dimensions<3)){1->dim3[i]}else{dimensions[3]->dim3[i]}
 }
 
 #determine which arrays have non-matching dimensions and drop those
@@ -28,8 +29,11 @@ which(dim2!=dim2[1])->drop2
 intersect(drop1,drop2)->drop
 which(!(c(1:length(args_)%in%drop)))->keep
 message("keeping arrays: ",listout(keep),", dropping arrays: ",listout(drop))
+#message(paste(dim3, collapse=", "))
+
 dim3[keep]->dim3_#updated third dimensions, with dropped arrays removed
 
+message("making array with dim()==", paste(dim1[1],dim2[1],sum(dim3_),sep=", "))
 #empty array
 array(NA, dim=c(dim1[1],dim2[1],sum(dim3_)))->out_arr
 
