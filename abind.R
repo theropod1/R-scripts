@@ -17,10 +17,13 @@ dim2<-numeric()
 dim3<-numeric()
 for(i in 1:length(args_)){
 as.numeric(dim(args_[[i]]))->dimensions
+print(dimensions)
 #message(length(dimensions))
 dimensions[1]->dim1[i]
 dimensions[2]->dim2[i]
-if(length(dimensions<3)){1->dim3[i]}else{dimensions[3]->dim3[i]}
+if(length(dimensions)<3){1->dim3[i]
+message("array has no third dimension→dim3=1")
+}else{dimensions[3]->dim3[i]}
 }
 
 #determine which arrays have non-matching dimensions and drop those
@@ -29,7 +32,7 @@ which(dim2!=dim2[1])->drop2
 intersect(drop1,drop2)->drop
 which(!(c(1:length(args_)%in%drop)))->keep
 message("keeping arrays: ",listout(keep),", dropping arrays: ",listout(drop))
-#message(paste(dim3, collapse=", "))
+#message("dim3:", paste(dim3, collapse=", "))
 
 dim3[keep]->dim3_#updated third dimensions, with dropped arrays removed
 
@@ -38,6 +41,9 @@ message("making array with dim()==", paste(dim1[1],dim2[1],sum(dim3_),sep=", "))
 array(NA, dim=c(dim1[1],dim2[1],sum(dim3_)))->out_arr
 
 ##concatenation
+message("writing array",1,"to", 1,":",dim3_[1])
+message("dimensions of 1st array: ", paste(dim(args_[[1]]),collapse=", "))
+
 out_arr[,,1:dim3_[1]]<-args_[[1]] #add first array
 
 for(i in 2:length(args_)){ #now loop over all arrays in ...
