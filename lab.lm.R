@@ -199,7 +199,7 @@ text(x=xtxt,y=ytxt, adj=c(adj[1],adj[2]+spacing), sadd,...)
 #' @param weighted logical indicating whether weights should be taken into account, if available in model$weights
 #' @export wsd
 #' @return the (weighted) r.squared of the model
-rsq<-function(model,weighted=TRUE){
+rsq<-function(model,weighted=TRUE,...){
 if("weights"%in%names(model) & weighted){
 1-wsd(model$residuals,model$weights)^2/wsd(model$model[,1],model$weights)^2
 }else{
@@ -228,7 +228,7 @@ if("weights"%in%names(model) & weighted){
 #' PPE(m)
 
 
-PPE<-function(yfitted, yobserved=NULL, testingx=NULL, predvars=NULL, verbose=FALSE, transformation=identity){
+PPE<-function(yfitted, yobserved=NULL, testingx=NULL, predvars=NULL, verbose=FALSE, transformation=identity,...){
 yfitted->yfit0
 if(inherits(yfitted,"lm")){ #if model is supplied, automatically do the rest
 yfit0$fitted.values->yfitted
@@ -289,7 +289,7 @@ if(verbose){
 #' RMSE(m)
 
 
-RMSE<-function(yfitted, yobserved=NULL, testingx=NULL, predvars=NULL, verbose=FALSE, transformation=identity){
+RMSE<-function(yfitted, yobserved=NULL, testingx=NULL, predvars=NULL, verbose=FALSE, transformation=identity,...){
 yfitted->yfit0
 if(inherits(yfitted,"lm")){ #if model is supplied, automatically do the rest
 yfit0$fitted.values->yfitted
