@@ -96,18 +96,35 @@ strsplit(x, sep)[[1]]
 #' @return character vector of nth word in each string in x
 #' @export word
 word<-function(x, sep=" ", n="last",...){#extracts word n (or "last" for last word of each) from a string.
-if(length(sep)<length(x)) rep(sep,length(x))->sep
+
+if(length(sep)==1 && length(n)==1){
+
+s<-function(x, separator, wn,...){
+spl<-strsplit(x, sep, ...)[[1]]
+if(n=="last") n_<-length(spl) else n_<-n
+return(spl[as.numeric(n_)])
+}
+
+return(sapply(X=x, FUN=s, separator=sep, wn=n,...))
+
+}else{
 if(length(n)<length(x)) rep(n,length(x))->n
+if(length(sep)<length(x)) rep(sep,length(x))->sep
 out<-numeric()
 for(i in 1:length(x)){
-if(length(strsplit(x[i], sep,...)[[1]])==1){out[i]<-x[i]}else{
+strsplit(x[i], sep,...)[[1]]->spl
+if(length(spl)==1){out[i]<-x[i]}else{
 n[i]->n_
-if(n[i]=="last") n_<-length(strsplit(x[i], sep,...)[[1]])
+if(n[i]=="last") n_<-length(spl)
 strsplit(x[i], sep[i])[[1]]->t
 t[as.numeric(n_)]->out[i]
 }
 }
 return(out)
+
+}
+
+
 }##
 
 ##italicize()
