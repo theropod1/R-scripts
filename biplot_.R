@@ -56,11 +56,14 @@ if(v) print(5)
   
   adjx<-ifelse(arrow.args$x1>0,0,1)
   adjy<-ifelse(arrow.args$y1>0,0,1)
-  txtcol<-rep("black",length(alab))
+  txtcol<-par("fg")
   if("col"%in%names(arrow.args)) txtcol<-arrow.args$col
+  if(length(txtcol)<length(alab)) rep(txtcol,length(alab))[1:length(alab)]->txtcol
+  
     if(v) print(7)
 
   for(i in 1:length(alab))
+  if(v) print(c(alab[i],txtcol[i]))
   text(arrow.args$x1[i],arrow.args$y1[i],labels=alab[i], adj=c(adjx[i],adjy[i]),col=txtcol[i])
   }
 }
