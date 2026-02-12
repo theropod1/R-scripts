@@ -68,6 +68,6 @@ if(v) print(5)
   }
 }
 }
-invisible(list(xscores=scores[,PCs[1]],yscores=scores[,PCs[2]],arrow.args=arrow.args))
+invisible(list(pc_scores=data.frame(x=scores[,PCs[1]],y=scores[,PCs[2]]),arrow.args=arrow.args))
 
 }
