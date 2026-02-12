@@ -51,20 +51,20 @@ if(v) print(5)
     
   do.call(arrows, arrow.args) #draw arrows
   
-  if(!is.null(alab)){
-  if(v) print(6)
-  
+  if(!is.null(alab)){ 
   adjx<-ifelse(arrow.args$x1>0,0,1)
   adjy<-ifelse(arrow.args$y1>0,0,1)
   txtcol<-par("fg")
   if("col"%in%names(arrow.args)) txtcol<-arrow.args$col
   if(length(txtcol)<length(alab)) rep(txtcol,length(alab))[1:length(alab)]->txtcol
   
-    if(v) print(7)
+    if(v) print(txtcol)
 
-  for(i in 1:length(alab))
+  for(i in 1:length(alab)){
   if(v) print(c(alab[i],txtcol[i]))
+  
   text(arrow.args$x1[i],arrow.args$y1[i],labels=alab[i], adj=c(adjx[i],adjy[i]),col=txtcol[i])
+  }
   }
 }
 }
