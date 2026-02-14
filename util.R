@@ -264,3 +264,13 @@ exists(x[i],...)->out[i]
 return(out)
 }
 
+##function rd()
+#' convenience function based on readChar() for conveniently reading a text string from a file
+#' @param filename file name
+#' @param ... additional arguments to be passed on to readChar()
+#' @return the content of the text file as a single character string
+#' @export rd
+rd<-function(filename,...){
+if( is.character(filename) && file.exists(filename) ){
+return(readChar(filename,nchars=file.info(filename)$size,...))}else{stop("not a valid filename")}
+}
