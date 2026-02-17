@@ -12,7 +12,7 @@
 #' @return invisible object containing the arrow coordinates and settings and the x and y coordinates of all points.
 #' @export biplot_
 
-biplot_<-function(PCA, PCs=c(1,2), loadings=NULL,alab=NULL, PC.lab=NULL, arrow.settings=list(angle=30),adjust=1,v=FALSE,plot=TRUE,...){
+biplot_<-function(PCA, PCs=c(1,2), loadings=NULL,alab=rownames(PCA$rotation), PC.lab=NULL, arrow.settings=list(angle=30),adjust=1,v=FALSE,plot=TRUE,...){
 
 plot.arrows<-TRUE
 if(!is.null(loadings) && loadings==FALSE) plot.arrows<-FALSE
