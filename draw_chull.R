@@ -47,6 +47,8 @@ if(is.null(fac)){
 if(is.function(color)) color<-color(1)
 if(is.function(border)) border<-border(1)
 
+if(length(alpha)<length(color)) rep(alpha,length(color))[1:length(color)]->alpha
+
 draw_chull_(x=x,y=y,subset=subset,col=add.alpha(color,alpha), border=border, lwd=lwd, lty=lty,...)
 
 }else{
@@ -63,8 +65,13 @@ if(is.function(border)){border<-border(length(levels(fac2)))}else{border<-rep(bo
 lwd<-rep(lwd,n(levels(fac2)))[1:n(levels(fac2))]
 lty<-rep(lwd,n(levels(fac2)))[1:n(levels(fac2))]
 
+if(length(alpha)<length(color)) rep(alpha,length(color))[1:length(color)]->alpha
+
+fillcol<-character()
+
 for(i in 1:length(levels(fac2))){
-if(length(which(fac==levels(fac2)[i]))>2) draw_chull_(x=x,y=y,subset=which(fac==levels(fac2)[i]), col=add.alpha(color[i],alpha), border=border[i], lwd=lwd, lty=lty,...)
+fillcol[i]<-add.alpha(color[i],alpha[i])
+if(length(which(fac==levels(fac2)[i]))>2) draw_chull_(x=x,y=y,subset=which(fac==levels(fac2)[i]), col=add.alpha(color[i],alpha[i]), border=border[i], lwd=lwd, lty=lty,...)
 }
 
 
@@ -74,8 +81,10 @@ if(legend!=FALSE) list(x=as.character(legend),bty="n")->legend
 
 if(inherits(legend,"list")){
 
+if(!exists("fillcol")) fillcol<-add.alpha(color,alpha[1])
+
 legend$legend<-levels(fac2)
-legend$fill<-add.alpha(color,alpha)
+legend$fill<-fillcol
 legend$border<-border
 legend$text.col<-border
 legend$col<-border
