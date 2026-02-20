@@ -113,7 +113,7 @@ return(out)
 #' @export treenum
 #' @importFrom TreeTools ReadTntCharacters
 #' @importFrom ape read.tree
-treenum<-function(treestring, charmatr,return.phylo=FALSE,v=TRUE,...){
+treenum<-function(treestring, charmatr, return.phylo=FALSE, v=TRUE,...){
 
 is_numeric_like<-function(x){
 as.numeric(x)->x_
@@ -145,27 +145,15 @@ if(inherits(treestring,"phylo")){
 treestring->tree0
 original_is_newick<-FALSE
 }else{
+gsub("\n","",treestring)->treestring
+if(v) print(treestring)
 
-original_is_newick<-TRUE
+if(grepl(",",treestring)) original_is_newick<-TRUE else original_is_newick<-FALSE #test if newick string is found
 
-tree0 <- tryCatch({
-        ape::read.tree(text=treestring)
-    }, error = function(e) {
-    original_is_newick<<-FALSE
-if(v) message("tree not in newick format, trying tnt2nwk()")
-return(tnt2nwk(treestring,return.phylo=TRUE))
-
-    }, warning = function(w) {
-        original_is_newick<<-FALSE
-if(v) message("tree not in newick format, trying tnt2nwk()")
-return(tnt2nwk(treestring,return.phylo=TRUE))
-    })
+if(original_is_newick) tree0 <- ape::read.tree(text=treestring) else tree0 <- tnt2nwk(treestring,return.phylo=TRUE)
     
-    if(is.null(tree0$tip.label) || length(tree0$tip.label<2) || !grepl(",",treestring)){tnt2nwk(treestring,return.phylo=TRUE)->tree0
-    original_is_newick<-FALSE
-    if(v) message("tree not in clean newick format, trying tnt2nwk()")
-    }
-        if(v) print(original_is_newick)
+    if(v) print(tree0)
+	if(v) message("original_is_newick? = ",original_is_newick)
 }
         
 ##perform replacements
