@@ -341,8 +341,8 @@ if(!bootstrap) return(fit)
 ##plot.lm2()
 #' plot a model of class lm2 from the output of lm2()
 #' @param linmod2 an object of class "preds_lm2"
-#' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
-#' @param retransform function to back-transform predicted variable. If function is identity, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed
+#' @param transform function to transform predictor variable. If plotting a log~log model in log space is desired, specify exp() to first exponentiate the log-transformed predictor variable from the plot.
+#' @param retransform function to back-transform response variable (e.g. from log-transformation).
 #' @param other.predictors named list() or data.frame() with values for other predictors (either constant or same number as n parameter used with curve.
 #' @param varname name for raw predictor variable (if transformations were applied so it does not match name of coefficient)
 #' @param predvar predictor variable, defaults to 2 (=slope of the bivariate intercept model)
@@ -365,6 +365,7 @@ if("weights"%in%names(m)){corr<-weighted.mean(retransform(m$residuals),m$weights
 nam<-names(m$coefficients)
 if(!is.null(varname)){nam[predvar]<-varname}
 #message("preds for",nam[predvar],"in",nam)
+
 ##plot models
 if(is.null(other.predictors)){ # retransformed bivariate model
 predict(m, newdata=setNames(data.frame(transform(1)),nam[predvar]) , bootstrap=FALSE)->ctrl
@@ -392,7 +393,7 @@ curve( retransform( predict(m, newdata=setNames(data.frame(transform(x),transfor
 ##plot.preds_lm2()
 #' plot the bootstrapped models from the output of predict.preds_lm2
 #' @param preds_lm2 an object of class "preds_lm2"
-#' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed. Note that the function does not automatically transform the predictor, so you may need to specify the transformation used for the model here, even if you already fitted the model transformations inside the model formula. XXX
+#' @param transform function to transform predictor variable. If not a function, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed. Note that the function does not automatically transform the predictor, so you may need to specify the transformation used for the model here, even if you already fitted the model transformations inside the model formula.
 #' @param varname name for raw predictor variable (if transformations were applied so it does not match name of coefficient)
 #' @param retransform function to back-transform predicted variable. If function is identity, model is assumed to be linear in current plotting space and is plotted using abline() instead of curve(), for greater speed.
 #' @param nmodel number of first nmodel models to plot, if NULL (default) all models are plotted
