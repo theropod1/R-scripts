@@ -55,9 +55,11 @@ for(i in 1:n){
 tps[,,i]->tps_i
 tps_i/scale[i]->tps_i_scaled
 colMeans(tps_i_scaled)->centroidXY
-# square root of the summed squared distances of each landmark to the centroid.
+#square root of the summed squared distances of each landmark to the centroid.
 sqrt(sum(( tps_i_scaled[,1]-centroidXY[1])^2 + (tps_i_scaled[,2]-centroidXY[2])^2 ))->out[i]
 }
+
+names(out)<-dimnames(tps)[[3]]
 
 return(out)
 }
