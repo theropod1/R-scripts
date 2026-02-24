@@ -34,3 +34,30 @@ return(pdm)
 
 #ape::plot.phylo(phangorn::upgma(pdists))#calculate and plot a upgma tree based on the distance matrix
 ##
+
+##function Csize()
+#' compute the centroid size of specimens in a morphometric array
+#' @param tps an array of landmark coordinates such as is returned by geomorph::readland.tps()
+#' @param scale default 1, data will be assumed to be scaled; otherwise, scale (px per unit) for each specimen
+#' @return a centroid size or vector of centroid sizes
+#' @export Csize
+
+Csize<-function(tps,scale=1){
+
+dim(tps)[3]->n
+out<-numeric(n)
+
+
+if(is.null(scale)) scale<-1
+if(length(scale)<n) rep(scale,n)[1:n]->scale
+
+for(i in 1:n){
+tps[,,i]->tps_i
+tps_i/scale[i]->tps_i_scaled
+colMeans(tps_i_scaled)->centroidXY
+# square root of the summed squared distances of each landmark to the centroid.
+sqrt(sum(( tps_i_scaled[,1]-centroidXY[1])^2 + (tps_i_scaled[,2]-centroidXY[2])^2 ))->out[i]
+}
+
+return(out)
+}
