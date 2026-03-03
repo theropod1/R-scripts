@@ -276,7 +276,7 @@ Mesozoic,Jurassic,Middle Jurassic,Aalenian,174.7
 Mesozoic,Jurassic,Early Jurassic,Toarcian,182.7
 Mesozoic,Jurassic,Early Jurassic,Pliensbachian,190.8
 Mesozoic,Jurassic,Early Jurassic,Sinemurian,199.3
-Mesozoic,Jurassic,Early Jurassic,Hettangian,201.3
+Mesozoic,Jurassic,Early Jurassic,Hettangian,201.4
 Mesozoic,Triassic,Late Triassic,Rhaetian,205.7
 Mesozoic,Triassic,Late Triassic,Norian,227.3
 Mesozoic,Triassic,Late Triassic,Carnian,237
@@ -339,3 +339,4 @@ phanerozoic<-new_geotimescale(phanerozoic)
 
 #example usage:
 #plot(phanerozoic,horiz=T,add=F,border="white",lwd=0.5,col=add.alpha("black"), text_range=c(600,15))
+#paste(sort(tapply(phanerozoic$bottom,phanerozoic$period,FUN=max)),collapse=",")
