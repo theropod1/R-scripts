@@ -7,7 +7,7 @@
 #' @return A 'geotimescale' object.
 #' @export new_geotimescale
 
-new_geotimescale <- function( data, bottom_name="bottom", top0=10E-8^) {
+new_geotimescale <- function( data, bottom_name="bottom", top0=10E-8) {
 
  if(is.character(data) && length(data)==1 && file.exists(data)) read.csv(data) -> data
  
