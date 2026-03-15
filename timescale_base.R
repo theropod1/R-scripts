@@ -24,23 +24,31 @@ new_geotimescale <- function( data, bottom_name="bottom", top0=10E-8) {
 
 
 ##timebin() function
-#'
-#' 
-timebin<-function(x,strat,lower=NULL,upper=NULL){
+#' timebin data based on numeric age data
+#' @param x a vector of numeric age data
+#' @param strat stratigraphic table
+#' @param lower lower border of intervals
+#' @param upper upper border of intervals
+#' @param def_level default hierarchy level in strat to take interval names from (default 4, for stages in the phanerozoic dataframe)
+timebin<-function(x,strat,lower=NULL,upper=NULL,def_level=4){
 
-if(inherits(strat,"geotimescale") | ("bottom"%in%colnames(strat))  | ("top"%in%colnames(strat))){
+if(inherits(strat,"geotimescale") | ("bottom"%in%colnames(strat))  & ("top"%in%colnames(strat))){
 if(is.null(lower)) lower<-strat$bottom
 if(is.null(upper)) upper<-strat$top
+strat<-as.character(strat[,def_level])
 }
 
 if(is.numeric(x)){
+
 y<-rep(NA,length(x))
 for(i in 1:length(x)){
 y_<-strat[lower>=x[i] & upper<=x[i]]
+
 if(length(y_)==1) y_->y[i]
 if(length(y_)>1) y_[1]->y[i]
 if(length(y_)==0) NA->y[i]
 }
+
 }else{
 #XXX future logic to convert named intervals to numeric time
 }
@@ -64,13 +72,14 @@ return(y)
 #' @param add logical, add to existing plot? (default NULL will add to open plotting device if available, specify TRUE/FALSE to override)
 #' @param stratifill logical; use stratifill attribute to automatically generate fill colors (default=TRUE)
 #' @param label_top logical; plot labels after all polygons are plotted to keep them on top at all times? (default=FALSE)
+#' @param alpha_fill alpha channel value to be applied to fill colors
 #' @param ... additional parameters to pass on to plot and polygon
 #' @return nothing, but adds the plotted time scale to the current plotting device
 #' @export plot.geotimescale
 #' @method plot.geotimescale
-#' @importFrom
+#' @importFrom paleoDiv add.alpha
 #' @examples
-plot.geotimescale<-function(x, time.convert=NULL, fromto=NULL, levels=c(1:4), horiz=FALSE, v=FALSE, rotate=NULL, widths=NULL, width_adjust=3, text_range=range(x$bottom), add=NULL, stratifill=TRUE, label_top=FALSE,...){
+plot.geotimescale<-function(x, time.convert=NULL, fromto=NULL, levels=c(1:4), horiz=FALSE, v=FALSE, rotate=NULL, widths=NULL, width_adjust=3, text_range=range(x$bottom), add=NULL, stratifill=TRUE, label_top=FALSE,alpha_fill=1,...){
 list(...)->plot_args
 
 between<-function(x,between) x<=max(between) & x>=min(between)
@@ -130,6 +139,7 @@ if(horiz) ifelse(!rotatel, 1/nlev/width_adjust,1/nlev*width_adjust)->widths
 if(v) print(widths)
 }
 widths/sum(widths)*width->widths
+if(fromto[2]<fromto[1]) widths<-widths*-1
 if(v) print(widths)
 
 #plotting
@@ -169,6 +179,9 @@ if(i_>1) sum(widths[1:(i_-1)])+fromto[1]->umar else fromto[1]->umar
 
 tapply(x$bottom,factor(x[,i]),FUN=max)->maxes
 tapply(x$top,factor(x[,i]),FUN=min)->mins
+mins[order(maxes)]->mins
+maxes[order(maxes)]->maxes
+
 names(maxes)->nam
 
 for(j in 1:length(nam)){ #loop through each stratigraphic unit in given level of hierarchy
@@ -188,19 +201,31 @@ textvert<-mean(c(maxes[j], mins[j], mins[j], maxes[j]))
 }
 
 if(stratifill && "stratifill"%in%names(attributes(x))){
-if(nam[j] %in% names(straticolors)) plot_args2$col<-straticolors[nam[j]] else plot_args2$col<-"lightgrey"
+if(nam[j] %in% names(straticolors)) plot_args2$col<-paleoDiv::add.alpha(straticolors[nam[j]],alpha_fill) else plot_args2$col<-paleoDiv::add.alpha("lightgrey",alpha_fill)
 
 do.call(polygon, plot_args2)
 
 }else{
 if("fill"%in%names(plot_args2) & !("col"%in%names(plot_args2))) plot_args2$col<-plot_args2$fill
 
+if("col"%in%names(plot_args2)){
+if(length(plot_args2$col)<length(nam)) rep(plot_args2$col,length(nam))[j]->plot_args2$col
+
+paleoDiv::add.alpha(plot_args2$col,alpha_fill)->plot_args2$col
+
+if(v) message(nam[j])
+#alternate colors if vector 
+}
+
 do.call(polygon, plot_args2)
 }
 
+if(!is.null(text_range) && length(text_range>1)){
 if(!label_top && between(mean(c(maxes[j], mins[j], mins[j], maxes[j])),text_range)) text(x=texthor,y=textvert, nam[j], srt=rotate[i_], ... )
+}
 }#end loop through intervals 1 (polygons)
 
+if(!is.null(text_range) && length(text_range>1)){
 if(label_top) for(j in 1:length(nam)){ #loop through each stratigraphic unit in given level of hierarchy for labelling
 
 plot_args2<-plot_args
@@ -220,6 +245,7 @@ textvert<-mean(c(maxes[j], mins[j], mins[j], maxes[j]))
 
 if(between(mean(c(maxes[j], mins[j], mins[j], maxes[j])),text_range)) text(x=texthor,y=textvert, nam[j], srt=rotate[i_], ... )
 }#end loop through intervals 2 (labels)
+}
 
 }#end loop through hierarchy
 
@@ -238,7 +264,6 @@ Cenozoic,Quaternary,Pleistocene,Calabrian,1.8
 Cenozoic,Quaternary,Pleistocene,Gelasian,2.58
 Cenozoic,Neogene,Pliocene,Piacenzian,3.6
 Cenozoic,Neogene,Pliocene,Zanclean,5.333
-Cenozoic,Neogene,Miocene,Zanclean,5.333
 Cenozoic,Neogene,Miocene,Messinian,7.246
 Cenozoic,Neogene,Miocene,Tortonian,11.63
 Cenozoic,Neogene,Miocene,Serravallian,13.82
@@ -340,3 +365,7 @@ phanerozoic<-new_geotimescale(phanerozoic)
 #example usage:
 #plot(phanerozoic,horiz=T,add=F,border="white",lwd=0.5,col=add.alpha("black"), text_range=c(600,15))
 #paste(sort(tapply(phanerozoic$bottom,phanerozoic$period,FUN=max)),collapse=",")
+
+#paste(phanerozoic$stage,collapse="','")
+#paste(phanerozoic$bottom,collapse=",")
+#paste(attr(phanerozoic,"stratifill")[phanerozoic$stage],collapse="','")
