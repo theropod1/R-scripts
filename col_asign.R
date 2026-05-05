@@ -4,16 +4,18 @@ col_asign<-function(x,FUN=ggcol,na=NA,nam=names(x),order=FALSE,overview=FALSE){
 if(!order) unique(x)->lev
 if(order) levels(factor(x))->lev
 
-if(is.function(FUN)) FUN(length(lev))->FUN
-if(all(lev%in%names(FUN))) FUN[lev]->FUN
+lev[is.na(lev)]<-na
+x[is.na(x)]<-na
 
+if(is.function(FUN)) FUN(length(lev))->FUN
+
+if(all(lev%in%names(FUN))) FUN[lev]->FUN else FUN[1:length(lev)]->FUN
 
 numeric()->out
 
 for(i in 1:length(lev)){
 out[x==lev[i]]<-FUN[i]
 }
-if(!is.null(na)) out[is.na(x)]<-na
 names(out)<-nam
 
 if(!overview) return(out)
