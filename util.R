@@ -1,15 +1,4 @@
-## multigrep()
-#' search for multiple values and return a vector of entries matching them
-#' @param matches vector of search patterns
-#' @param vector vector in which to search
-#' @return indices of entries in vector that match one or more patterns in matches
-#' @export multigrep
-multigrep<-function(matches, vector){
-out<-numeric()
-for(i in matches){out<-c(out, grep(i,vector))}
-return(out)
-}
-##
+
 
 ##cc()
 #' like c(), but always converts the final result to character()
@@ -33,9 +22,7 @@ freplace<-function(x,values,replacements=NA){
 
 if(length(values)>length(replacements)) rep(replacements,length(values))[1:length(values)]
 
-for(i in 1:length(x)){if(x[i]%in%values){
-for(j in 1:length(values)){if(x[i]==values[j]) x[i]<-replacements[j]}
-	}}
+for(j in 1:length(values)){if(values[j]%in%x) x[x==values[j]]<-replacements[j]}
 return(x)
 }
 ##
@@ -45,16 +32,50 @@ return(x)
 #' search for multiple values and return logical vector for presence or absence of the different entries in pattern
 #' @param matches vector of search patterns
 #' @param vector vector in which to search
-#' @return indices of entried in vector that match one or more patterns in matches
+#' @return logical vector with same length as matches giving whether or not element is present in vector
 #' @export multilgrep
 multilgrep<-function(matches, vector){
-out<-logical()
-for(i in matches){
-out<-c(out, ifelse(any(grepl(i,vector)),TRUE,FALSE))
+out<-logical(length(matches))
+for(i in 1:length(matches)){
+out[i]<-ifelse(any(grepl(matches[i],vector)),TRUE,FALSE)
 }
 return(out)
 }
 ##
+
+
+## multigrepl()
+#' return logical vector giving presence of matches in vector
+#' @param matches vector of search patterns
+#' @param vector vector in which to search
+#' @return indices of entried in vector that match one or more patterns in matches
+#' @export multilgrep
+multigrepl<-function(matches, vector){
+out<-logical(length(vector))
+for(i in 1:length(out)){
+out[i]<-any(multilgrep(matches,vector[i]))
+}
+return(out)
+}
+##
+
+## multigrep()
+#' search for multiple values and return a vector of entries matching them
+#' @param matches vector of search patterns
+#' @param vector vector in which to search
+#' @return indices of entries in vector that match one or more patterns in matches
+#' @export multigrep
+multigrep<-function(matches, vector){
+#out<-numeric()
+#for(i in matches){out<-c(out, grep(i,vector))}
+#return(out)
+multigrepl(matches,vector)->out
+which(out==TRUE)
+}
+##
+
+
+
 
 ##multigsub()
 #' replace several character strings in a vector with replacements

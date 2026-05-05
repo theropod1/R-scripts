@@ -79,17 +79,21 @@ return(y)
 #' @method plot.geotimescale
 #' @importFrom paleoDiv add.alpha
 #' @examples
-plot.geotimescale<-function(x, time.convert=NULL, fromto=NULL, levels=c(1:4), horiz=FALSE, v=FALSE, rotate=NULL, widths=NULL, width_adjust=3, text_range=range(x$bottom), add=NULL, stratifill=TRUE, label_top=FALSE,alpha_fill=1,...){
+plot.geotimescale<-function(x, time.convert=identity, fromto=NULL, levels=c(1:4), horiz=FALSE, v=FALSE, rotate=NULL, widths=NULL, width_adjust=3, text_range=range(x$bottom), add=NULL, stratifill=TRUE, label_top=FALSE,alpha_fill=1,...){
 list(...)->plot_args
 
 between<-function(x,between) x<=max(between) & x>=min(between)
 
 if(!inherits(x,"geotimescale")) new_geotimescale(x)->x
 attr(x,"stratifill")->straticolors
-if(!is.null(time.convert)){
+if(!is.function(time.convert) && inherits(time.convert,"phylo")){
+time.convert->open_tree
+time.convert<-function(x) tsconv(x,open_tree)
+}
+
 time.convert(x$bottom)->x$bottom
 time.convert(x$top)->x$top
-}
+time.convert(text_range)->text_range
 
 #rotate text logic
 if(is.null(rotate)){ rotate<-rep(TRUE,length(levels)) 
@@ -177,8 +181,8 @@ which(levels==i)->i_
 sum(widths[1:i_])+fromto[1]->lmar
 if(i_>1) sum(widths[1:(i_-1)])+fromto[1]->umar else fromto[1]->umar
 
-tapply(x$bottom,factor(x[,i]),FUN=max)->maxes
-tapply(x$top,factor(x[,i]),FUN=min)->mins
+tapply(c(x$top,x$bottom),factor(rep(x[,i],2)),FUN=max)->maxes
+tapply(c(x$top,x$bottom),factor(rep(x[,i],2)),FUN=min)->mins
 mins[order(maxes)]->mins
 maxes[order(maxes)]->maxes
 
