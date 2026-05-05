@@ -4,8 +4,11 @@ col_asign<-function(x,FUN=ggcol,na=NA,nam=names(x),order=FALSE,overview=FALSE){
 if(!order) unique(x)->lev
 if(order) levels(factor(x))->lev
 
-lev[is.na(lev)]<-na
-x[is.na(x)]<-na
+if(!is.null(na)){lev[is.na(lev)]<-na
+x[is.na(x)]<-na}else{
+lev[is.na(lev)]<-"<NA>"
+x[is.na(x)]<-"<NA>"
+}
 
 if(is.function(FUN)) FUN(length(lev))->FUN
 
