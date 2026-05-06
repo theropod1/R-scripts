@@ -6,6 +6,8 @@
 #' @param predvar variable(s) to use as predictor variable, if distinct from plotting variable. Can be a vector (bivariate regression) or data.frame. In the case ofa data.frame, colnames are assumed to correspond to the variable names used for the model supplied in lm. If NULL (default), the x variable of the plot is assumed to correspond to the predictor variable for the regression.
 #' @param plotvar plotting variable corresponding to each predictor variable in predvar, if not NULL
 #' @param transformation Transformation to apply. Defaults to NUll (i.e. no transformation), can also be "log", "log10", or any function to be used on the output of predict to (re)transform the predicted values. If "log" or "log10", exp() and 10^ are automatically used to transform the output as appropriate for a model fitted using a call of the type lm(log(y)~log(x)) or equivalent.
+#' @param pretransform transformation function to be applied to independent variable(s) before predictions, defaults to identity()
+#' @param retransform transformation function to be applied to predicted values before plotting, useful for plotting in log-log space
 #' @param limits X axis/independent variable limits within which to plot
 #' @param col Color for main regression line
 #' @param fill Color for confidence or prediction polygon (defaults to col). If set to NA, plotting of polygon is suppressed.
@@ -36,7 +38,7 @@
 #'ci.lm(m2,alpha=0.5,transformation="log",lty=1,col="blue",lwd=2,limits=c(1.5,4.5),lt.border=2,border="blue")
 
 
-ci.lm<-function(lm,varname=NULL, plotvar=NULL, predvar=NULL, transformation=NULL, limits=NULL, col="black",fill=col,border=NA,alpha=0.5,interval="confidence",level=0.9,lt.border=2,lw.border=1,subdivisions=200,type=as.numeric,...){
+ci.lm<-function(lm,varname=NULL, plotvar=NULL, predvar=NULL, transformation=NULL,pretransform=identity,retransform=identity, limits=NULL, col="black",fill=col,border=NA,alpha=0.5,interval="confidence",level=0.9,lt.border=2,lw.border=1,subdivisions=200,type=as.numeric,...){
 if(dev.cur()==1){stop("ERROR: No open plotting device to add to")}
 vnset<-FALSE
 
@@ -73,7 +75,6 @@ predvar->df
 vnset<-TRUE#indicate that df already has correct varnames ##XXX
 }else{data.frame(x=type(predvar))->df}
 
-
 x<-plotvar
 
 #print(head(df),10)
@@ -104,6 +105,8 @@ if(vnset==FALSE){#if predvar doesn’t already have correct names
 colnames(df)<-varname}###
 #print(head(df))
 
+df<-pretransform(df)
+
 if(grepl("loess",summary(lm)$call[1])==TRUE){#if loess model is given
 
 predict(lm,df, se=T)->preds
@@ -132,6 +135,12 @@ transformation(predict(lm,df,interval=interval,level=level))->preds
 preds[,1]->point
 preds[,2]->lwr
 preds[,3]->upr
+
+retransform(preds)->preds
+retransform(point)->point
+retransform(lwr)->lwr
+retransform(upr)->upr
+
 }#end estimation
 
 #throw out NA values
@@ -165,4 +174,4 @@ lines(upr~x,col=border, lty=lt.border,lwd=lw.border)
 #add regression line
 lines(point~x,col=col,...)
 
-}
+}##
