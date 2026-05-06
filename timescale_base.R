@@ -95,6 +95,8 @@ time.convert(x$bottom)->x$bottom
 time.convert(x$top)->x$top
 time.convert(text_range)->text_range
 
+if(!is.null(rotate)) rep(rotate,length(levels))[1:length(levels)]->rotate
+
 #rotate text logic
 if(is.null(rotate)){ rotate<-rep(TRUE,length(levels)) 
 rotate[length(levels)]<-FALSE
@@ -367,9 +369,4 @@ Neoproterozoic,Cryogenian,Cryogenian,Cryogenian,720")
 phanerozoic<-new_geotimescale(phanerozoic)
 
 #example usage:
-#plot(phanerozoic,horiz=T,add=F,border="white",lwd=0.5,col=add.alpha("black"), text_range=c(600,15))
-#paste(sort(tapply(phanerozoic$bottom,phanerozoic$period,FUN=max)),collapse=",")
-
-#paste(phanerozoic$stage,collapse="','")
-#paste(phanerozoic$bottom,collapse=",")
-#paste(attr(phanerozoic,"stratifill")[phanerozoic$stage],collapse="','")
+#plot(phanerozoic,horiz=T,add=F,border="white",lwd=0.5,col=add.alpha("black"), text_range=c(600,15),xlim=c(360,295))
