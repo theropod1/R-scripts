@@ -1,8 +1,8 @@
 ## class constructor for geotimescale
 #' Create a custom geotimescale object
 #'
-#' @param data a Matrix or data.frame, or a filename to read using read.csv(), containing a hierarchical stratigraphic table
-#' @param bottom_name character giving name of the column containing the bottom age for each interval
+#' @param data a matrix or data.frame, or a filename to read using read.csv(), containing a hierarchical stratigraphic table
+#' @param bottom_name character string giving the name of the column containing the bottom age for each interval
 #' @param top0 what value to use as top value for all intervals (defaults to 10E-8 for compatibility with log-transformed plotting)
 #' @return A 'geotimescale' object.
 #' @export new_geotimescale
