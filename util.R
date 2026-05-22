@@ -295,3 +295,62 @@ rd<-function(filename,...){
 if( is.character(filename) && file.exists(filename) ){
 return(readChar(filename,nchars=file.info(filename)$size,...))}else{stop("not a valid filename")}
 }
+
+
+##function pr()
+#' convenience function to return plot range
+#' @parameter axis single character giving axis; if x, use x axis, otherwise use y axis
+#' @return the width or height of the current plot (based on par("usr")
+#' @export pr
+
+pr <- function(axis = "x") {
+            if(axis == "x"){
+                abs(diff(range(par("usr")[1:2])))}else{
+                abs(diff(range(par("usr")[3:4])))}}
+
+
+
+##function lebbel()
+#' convenience function for adding lettered subplot labels to a plot
+#' @param A1 default NULL index number of plot (e.g 1–>A, 2–>B etc.). This number is stored in a global object named A1 and is iteratively increased by 1 each time lebbel is called, unless reset by specifying an explicit value
+#' @param v verbosity setting (logical)
+#' @param lwr lowercase? (logical)
+#' @param o Number of sublabels (e.g. A1, A2…) to be counted towards between increases of A1. default 0 (no sublabels)
+#' @param ... additional arguments to be passed on to mtext()
+#' @return Nothing (adds alphabetic label to current plotting device)
+#' @export lebbel
+#' @examples
+#' lebbel(adj=c(0,0),A1<-1) #for first label in plot
+#' lebbel(adj=c(0,0)) #for every subsequent label
+
+lebbel<-function(A1=NULL,v=FALSE,lwr=FALSE,o=0,...){
+	ABC<-"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	if(lwr) tolower(ABC)->ABC
+    if(!exists("A1", envir = .GlobalEnv)) A1<<-1
+    if(!is.null(A1) && is.numeric(A1)) A1<<-A1
+    if(is.null(A1)) get("A1", envir = .GlobalEnv)->A1
+
+    if(o==0){
+mtext(substr(ABC,A1,A1),...)
+if(v) print(substr(ABC,A1,A1))
+if(v) print(A1)
+A1<-A1+1
+A1<<-A1
+}else{
+    if(!exists("o_temp", envir = .GlobalEnv)) o_temp<<-1
+    if(exists("o_temp", envir = .GlobalEnv)) get("o_temp", envir = .GlobalEnv)->o_temp
+    
+AB0 <- substr(ABC,A1,A1)
+mtext(bquote(.(AB0)[.(o_temp)]),...)
+o_temp<-o_temp+1
+o_temp<<-o_temp
+    
+    if(o_temp>o){o_temp<<-1
+    A1<-A1+1
+	A1<<-A1}
+}
+#usage equivalent to mtext(side=3, line=0.5, substr(ABC,A1,A1),adj=c(0,0))
+
+}
+
+
