@@ -323,25 +323,32 @@ pr <- function(axis = "x") {
 #' lebbel(adj=c(0,0),A1<-1) #for first label in plot
 #' lebbel(adj=c(0,0)) #for every subsequent label
 
-lebbel<-function(A1=NULL,v=FALSE,lwr=FALSE,o=0,...){
+lebbel<-function(A1=NULL,v=FALSE,lwr=FALSE,o=0,adj=c(0,0),alt=NULL,...){
 	ABC<-"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	if(lwr) tolower(ABC)->ABC
     if(!exists("A1", envir = .GlobalEnv)) A1<<-1
     if(!is.null(A1) && is.numeric(A1)) A1<<-A1
     if(is.null(A1)) get("A1", envir = .GlobalEnv)->A1
 
+    A1->A1_
+    if(!is.null(alt)) A1_<-alt[A1]
+    
     if(o==0){
-mtext(substr(ABC,A1,A1),...)
-if(v) print(substr(ABC,A1,A1))
-if(v) print(A1)
+    
+mtext(substr(ABC,A1_,A1_),adj=adj,...)
+if(v) print(substr(ABC,A1_,A1_))
+if(v) print(A1_)
 A1<-A1+1
 A1<<-A1
 }else{
     if(!exists("o_temp", envir = .GlobalEnv)) o_temp<<-1
     if(exists("o_temp", envir = .GlobalEnv)) get("o_temp", envir = .GlobalEnv)->o_temp
     
-AB0 <- substr(ABC,A1,A1)
-mtext(bquote(.(AB0)[.(o_temp)]),...)
+AB0 <- substr(ABC,A1_,A1_)
+mtext(bquote(.(AB0)[.(o_temp)]),adj=adj,...)
+if(v) print(substr(ABC,A1_,A1_))
+if(v) print(A1_)
+
 o_temp<-o_temp+1
 o_temp<<-o_temp
     
