@@ -358,6 +358,38 @@ o_temp<<-o_temp
 }
 #usage equivalent to mtext(side=3, line=0.5, substr(ABC,A1,A1),adj=c(0,0))
 
+}##
+
+
+
+
+
+##function whichorderin()
+#' convenience function for determining order of elements of one vector in another vector
+#' @param ordered vector for whose elements to determine order
+#' @param unordered vector in which to look for elements of ordered
+#' @param multiple logical, allow multiple occurrences of each element of ordered (slower)
+#' @param na.rm logical, remove nas for elements that were not found from output
+#' @return indices at which each element in ordered is found in unordered (can be used to bring unordered into identical order)
+#' @export whichorderin
+
+
+whichorderin<-function(ordered,unordered,multiple=FALSE,na.rm=TRUE){#function to copy the order of an identifier
+if(multiple){#multiple occurrences in unordered possible for each elemen of ordered (slower)
+out<-numeric()
+for(i in 1:length(ordered)){
+which(unordered==ordered[i])->i_
+out<-c(out,i_)
 }
 
+}else{#if only the first of each element should be returned
+out<-numeric(length(ordered))
+for(i in 1:length(ordered)){
+which(unordered==ordered[i])->i_
+if(length(i_)>0) i_[1]->out[i]
+}
+}
+if(na.rm) out<-out[!is.na(out)] #remove NAs
+return(out)#indices of each element of ordered in unordered
+}
 
