@@ -403,6 +403,7 @@ return(out)#indices of each element of ordered in unordered
 #' @param adjust factor to multiply plot width or height width for length of bracket ends
 #' @param labels text label to place on top of bracket
 #' @param txt list() type object of additional settings to pass on to txt
+#' @param sep should brackets be plotted as one single line or separate lines?
 #' @param ... Other arguments to pass on to lines()
 #' @return nothing (plots bracket on current plotting device)
 #' @export bracket
