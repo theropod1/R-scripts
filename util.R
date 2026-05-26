@@ -391,5 +391,60 @@ if(length(i_)>0) i_[1]->out[i]
 }
 if(na.rm) out<-out[!is.na(out)] #remove NAs
 return(out)#indices of each element of ordered in unordered
+}##
+
+
+
+
+##function bracket()
+#' plot a bracket at a given x or y position
+#' @param x x value or values at which to plot bracket
+#' @param y y value or values at which to plot bracket
+#' @param adjust factor to multiply plot width or height width for length of bracket ends
+#' @param labels text label to place on top of bracket
+#' @param txt list() type object of additional settings to pass on to txt
+#' @param ... Other arguments to pass on to lines()
+#' @return nothing (plots bracket on current plotting device)
+#' @export bracket
+
+bracket<-function(x,y,adjust=-1/50,labels="*",txt=list(),...){
+
+if(length(x)==1){
+horiz<-FALSE
+pr("x")->plex
+if(length(y)<2) stop("vertical plotting but less than one value specified for y")
+range(y)->y
+}else{
+horiz<-TRUE
+pr("y")->plex
+if(length(x)<2) stop("horizontal plotting but less than one value specified for x")
+range(x)->x
 }
+
+line_args<-list(...)
+#prep text settings
+if(!("labels"%in%names(txt))) labels->txt$labels
+if(!("x"%in%names(txt))) mean(x)->txt$x
+if(!("y"%in%names(txt))) mean(y)->txt$y
+if(!("adj"%in%names(txt)) & horiz) c(0.5,0)->txt$adj
+if(!("adj"%in%names(txt)) & !horiz) c(-0.5,0.5)->txt$adj
+if(!("cex"%in%names(txt))) 2->txt$cex
+if(!("col"%in%names(txt)) & "col"%in%names(line_args)) line_args$col->txt$col
+
+##plot lines
+if(horiz){
+lines(x=x,y=c(y,y),...)
+lines(x=x[c(1,1)],y=c(y,y+adjust*plex),...)
+lines(x=x[c(2,2)],y=c(y,y+adjust*plex),...)
+}else{
+lines(x=c(x,x),y=y,...)
+lines(y=y[c(1,1)],x=c(x,x+adjust*plex),...)
+lines(y=y[c(2,2)],x=c(x,x+adjust*plex),...)
+}
+
+if(!is.null(labels)) do.call("text",txt)
+
+}
+
+
 
