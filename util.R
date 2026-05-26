@@ -407,7 +407,7 @@ return(out)#indices of each element of ordered in unordered
 #' @return nothing (plots bracket on current plotting device)
 #' @export bracket
 
-bracket<-function(x,y,adjust=-1/50,labels="*",txt=list(),...){
+bracket<-function(x,y,adjust=-1/50,labels="*",txt=list(),sep=FALSE,...){
 
 if(length(x)==1){
 horiz<-FALSE
@@ -433,13 +433,18 @@ if(!("col"%in%names(txt)) & "col"%in%names(line_args)) line_args$col->txt$col
 
 ##plot lines
 if(horiz){
+if(sep){
 lines(x=x,y=c(y,y),...)
 lines(x=x[c(1,1)],y=c(y,y+adjust*plex),...)
-lines(x=x[c(2,2)],y=c(y,y+adjust*plex),...)
+lines(x=x[c(2,2)],y=c(y,y+adjust*plex),...)}else{
+lines(x=x[c(1,1,2,2)],y=c(y+adjust*plex,y,y,y+adjust*plex),...)
+}
 }else{
-lines(x=c(x,x),y=y,...)
+if(sep){lines(x=c(x,x),y=y,...)
 lines(y=y[c(1,1)],x=c(x,x+adjust*plex),...)
-lines(y=y[c(2,2)],x=c(x,x+adjust*plex),...)
+lines(y=y[c(2,2)],x=c(x,x+adjust*plex),...)}else{
+lines(y=y[c(1,1,2,2)],x=c(x+adjust*plex,x,x,x+adjust*plex),...)
+}
 }
 
 if(!is.null(labels)) do.call("text",txt)
