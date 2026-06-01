@@ -1,6 +1,9 @@
 ##function:
 #assign colours using a desired function (e.g. viridis(), ggcol()) based on factor levels in a variable x
 col_asign<-function(x,FUN=ggcol,na=NA,nam=names(x),order=FALSE,overview=FALSE){
+
+message("col_asign() is being deprecated and no longer receives updates or fixes, for a replacement please refer to the function col_ass() in source(\"https://raw.githubusercontent.com/theropod1/R-scripts/refs/heads/main/draw_chull.R\") which follows the same syntax")
+
 if(!order) unique(x)->lev
 if(order) levels(factor(x))->lev
 
