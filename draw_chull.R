@@ -16,7 +16,7 @@
 #' @importFrom grDevices chull
 #' @export draw_chull
 
-draw_chull<-function(x,y=NULL, subset=NULL, fac=NULL, color=ggcol, border=color, lwd=1, lty=1, alpha=0.5, legend=FALSE,v=TRUE,...){
+draw_chull<-function(x,y=NULL, subset=NULL, fac=NULL, color=ggcol, border=color, lwd=1, lty=1, alpha=0.5, legend=FALSE,v=FALSE,...){
 #define base function:
 draw_chull_<-function(x,y=NULL, subset=NULL,...){
 
