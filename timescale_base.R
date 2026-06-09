@@ -15,6 +15,8 @@ new_geotimescale <- function( data, bottom_name="bottom", top0=10E-8) {
  
   structure( data.frame( data[,which(colnames(data)!=bottom_name)], bottom=data[,bottom_name] ), class = c("geotimescale","data.frame") ) -> out
   out$top<-c(top0, out$bottom)[1:length(out$bottom)]
+  out$mid<-rowMeans(out[,c("bottom","top")])
+  
   stratifill<-c('#FDEDEC','#FDEDEC','#FDECE4','#FDECE4','#FEECDB','#FEECDB','#FEEBD2','#FFF2D3','#FFF2C7','#FFF2C7','#FFF2BA','#FFEDB3','#FFF0B9','#FFEFAF','#F9F97F','#FFFFBF','#FFF2CD','#FFFFB3','#FFF2C3','#FFFF99','#FFFF73','#FFFF66','#FFEC8C','#FFFF59','#FFFF4D','#FFEC73','#FFFF41','#FFFF33','#FFEC55','#FFFF00','#FFE619','#FEE6AA','#FED99A','#FEC07A','#FDCDA1','#FDC091','#FDB482','#FCA773','#FDB46C','#FDBF6F','#FEBF65','#FDB462','#FDA75F','#FD9A52','#F2F91D','#F2FA8C','#E6F47F','#D9EF74','#CCE968','#BFE35D','#B3DE53','#A6D84A','#CCEA97','#BFE48A','#B3DF7F','#A6D975','#99D36A','#8CCD60','#8CCD57','#7FC64E','#D9F1F7','#CCECF4','#BFE7F1','#B3E3EE','#BFE7E5','#B3E2E3','#A6DDE0','#9AD9DD','#80CFD8','#99CEE3','#80C5DD','#67BCD8','#4EB3D3','#42AED0','#34B2C9','#E3B9DB','#D6AAD3','#C99BCB','#BD8CC3','#C983BF','#BC75B7','#B168B1','#B051A5','#A4469F','#983999','#812B92','#67C5CA','#FCC0B2','#FCB4A2','#FBA794','#FB9A85','#FB8D76','#FB8069','#FB745C','#E38776','#E37B68','#E36F5C','#E36350','#EF5845','#F04028','#CCD4C7','#BFD0C5','#BFD0BA','#B3CBB9','#A6C7B7','#99C2B5','#8CBEB4','#7EBCC6','#BFC26B','#B3BE6C','#A6B96C','#99B46C','#8CB06C','#80AB6C','#678F66','#67A599','#F2EDB3','#F2EDAD','#F1E19D','#F1E185','#F1D576','#F1C868','#E5D075','#E5C468','#E5B75A','#E5AC4D','#CB8C37','#E6F5E1','#D9F0DF','#CCECDD','#BFE6CF','#CCEBD1','#BFE6C3','#B3E1C2','#BFE6CF','#B3E1C2','#A6DCB5','#99D7B3','#B3E1B6','#A6DBAB','#99D69F','#8CD094','#7FCA93','#74C69C','#66C092','#4DB47E','#41B087','#33A97E','#1A9D6F','#009270','#E6F5C9','#D9F0BB','#CCEBAE','#B3E095','#CCDFAA','#BFD99D','#B3D492','#A6CF86','#B3CA8E','#A6C583','#99C078','#A6BA80','#99B575','#8CB06C','#7FA056','#99C08D','#9AD9DD','#FED96A','#FECC5C','#FEBF4E','#FEB342','#FED99A','#FDCC8A','#FDC07A','#FDB462','#F875A7','#F76898','#F75B89','#F74F7C','#F74370','#F73563','#FAA7C8','#F99BC1','#F881B5','#F768A9','#F668B2','#F4449F','#E61D8C','#DA037F','#F0047F','#AE027E','#F74370','#FDEDEC','#FEECDB','#FFF2D3','#FFF0B9','#FFF2CD','#FFF2C3','#FFEC8C','#FFEC55','#A6D84A','#8CCD57','#B3E3EE','#42AED0','#BD8CC3','#983999','#BFD0BA','#8CBEB4','#B3BE6C','#80AB6C','#F1E19D','#E5AC4D','#7FCA93','#1A9D6F')
   names(stratifill)<-c('Meghalayan','Upper Holocene','Northgrippian','Middle Holocene','Greenlandian','Lower Holocene','Holocene','Upper Pleistocene','Chibanian','Middle Pleistocene','Calabrian','Gelasian','Lower Pleistocene','Pleistocene','Quaternary','Piacenzian','Upper Pliocene','Zanclean','Lower Pliocene','Pliocene','Messinian','Tortonian','Upper Miocene','Serravallian','Langhian','Middle Miocene','Burdigalian','Aquitanian','Lower Miocene','Miocene','Neogene','Chattian','Rupelian','Oligocene','Priabonian','Bartonian','Lutetian','Ypresian','Eocene','Thanetian','Selandian','Danian','Paleocene','Paleogene','Cenozoic','Maastrichtian','Campanian','Santonian','Coniacian','Turonian','Cenomanian','Upper Cretaceous','Albian','Aptian','Barremian','Hauterivian','Valanginian','Berriasian','Lower Cretaceous','Cretaceous','Tithonian','Kimmeridgian','Oxfordian','Upper Jurassic','Callovian','Bathonian','Bajocian','Aalenian','Middle Jurassic','Toarcian','Pliensbachian','Sinemurian','Hettangian','Lower Jurassic','Jurassic','Rhaetian','Norian','Carnian','Upper Triassic','Ladinian','Anisian','Middle Triassic','Olenekian','Induan','Lower Triassic','Triassic','Mesozoic','Changhsingian','Wuchiapingian','Lopingian','Capitanian','Wordian','Roadian','Guadalupian','Kungurian','Artinskian','Sakmarian','Asselian','Cisuralian','Permian','Gzhelian','Kasimovian','Upper Pennsylvanian','Moscovian','Middle Pennsylvanian','Bashkirian','Lower Pennsylvanian','Pennsylvanian','Serpukhovian','Upper Mississippian','Visean','Middle Mississippian','Tournaisian','Lower Mississippian','Mississippian','Carboniferous','Famennian','Frasnian','Upper Devonian','Givetian','Eifelian','Middle Devonian','Emsian','Pragian','Lochkovian','Lower Devonian','Devonian','Pridoli','Ludfordian','Gorstian','Ludlow','Homerian','Sheinwoodian','Wenlock','Telychian','Aeronian','Rhuddanian','Llandovery','Silurian','Hirnantian','Katian','Sandbian','Upper Ordovician','Darriwilian','Dapingian','Middle Ordovician','Floian','Tremadocian','Lower Ordovician','Ordovician','Cambrian 10','Jiangshanian','Paibian','Furongian','Guzhangian','Drumian','Wuliuan','Miaolingian','Cambrian 4','Cambrian 3','Cambrian Series 2','Cambrian 2','Fortunian','Terreneuvian','Cambrian','Paleozoic','Phanerozoic','Ediacaran','Cryogenian','Tonian','Neoproterozoic','Stenian','Ectasian','Calymmian','Mesoproterozoic','Statherian','Orosirian','Rhyacian','Siderian','Paleoproterozoic','Proterozoic','unnamed1','Neoarchean','unnamed2','Mesoarchean','unnamed3','Paleoarchean','unnamed4','Eoarchean','Archean','Hadean','Precambrian','Late Holocene','Early Holocene','Late Pleistocene','Early Pleistocene','Late Pliocene','Early Pliocene','Late Miocene','Early Miocene','Late Cretaceous','Early Cretaceous','Late Jurassic','Early Jurassic','Late Triassic','Early Triassic','Late Pennsylvanian','Early Pennsylvanian','Late Mississippian','Early Mississippian','Late Devonian','Early Devonian','Late Ordovician','Early Ordovician')
   attr(out,"stratifill")<-stratifill
@@ -30,9 +32,10 @@ new_geotimescale <- function( data, bottom_name="bottom", top0=10E-8) {
 #' @param lower lower border of intervals
 #' @param upper upper border of intervals
 #' @param def_level default hierarchy level in strat to take interval names from (default 4, for stages in the phanerozoic dataframe)
+#' @return either a single vector with binned time, or a two-column data.frame with the bottom and top ages for each time interval (if x is a character or factor)
 timebin<-function(x,strat,lower=NULL,upper=NULL,def_level=4){
-
-if(inherits(strat,"geotimescale") | ("bottom"%in%colnames(strat))  & ("top"%in%colnames(strat))){
+strat0<-strat
+if(inherits(strat0,"geotimescale") | ("bottom"%in%colnames(strat0))  & ("top"%in%colnames(strat0))){
 if(is.null(lower)) lower<-strat$bottom
 if(is.null(upper)) upper<-strat$top
 strat<-as.character(strat[,def_level])
@@ -41,6 +44,7 @@ strat<-as.character(strat[,def_level])
 if(is.numeric(x)){
 
 y<-rep(NA,length(x))
+
 for(i in 1:length(x)){
 y_<-strat[lower>=x[i] & upper<=x[i]]
 
@@ -49,12 +53,74 @@ if(length(y_)>1) y_[1]->y[i]
 if(length(y_)==0) NA->y[i]
 }
 
+}else if(is.character(x) | is.factor(x)){#XXX take named intervals and return matrix with bottom and top ages
+y<-rep(NA,length(x))
+cbind(y,y)->y
+colnames(y)<-c("bottom","top")
+
+if(inherits(strat0,"geotimescale") | ("bottom"%in%colnames(strat0))  & ("top"%in%colnames(strat0))){ strat0[,which(!colnames(strat0)%in%colnames(y))]->strat_names 
+matrix(nrow=length(x),ncol=ncol(strat_names))->y_b->y_t
 }else{
-#XXX future logic to convert named intervals to numeric time
+strat->strat_names
+matrix(nrow=length(x),ncol=1)->y_b->y_t}
+
+
+for(i in 1:length(x)){ #loop through x and find corresponding bottom and top values
+
+if(inherits(strat0,"geotimescale") | ("bottom"%in%colnames(strat0))  & ("top"%in%colnames(strat0))){ 
+for(j in 1:ncol(strat_names)){
+which(strat_names[,j]==x[i])->xx
+if(length(xx)>0){
+max(lower[xx],na.rm=TRUE)->y_b[i,j]
+min(upper[xx],na.rm=TRUE)->y_t[i,j]}
 }
 
-return(y)
+}else{
+
+xx<-which(strat==x[i])
+if(length(xx)>0){
+max(lower[xx],na.rm=TRUE)->y_b[i,1]
+min(upper[xx],na.rm=TRUE)->y_t[i,1]}
 }
+
+max(y_b[i,],na.rm=TRUE)->y[i,1]
+min(y_t[i,],na.rm=TRUE)->y[i,2]
+}
+rownames(y)<-x
+
+as.data.frame(y)->y
+}
+
+
+return(y)
+}##
+
+
+
+##divDynprep
+#' prepare an occurrence dataframe for analysis in divDyn, i.e. time-bin all occurrences based on mean age and assign them to a single stage based on an ordered geotimescale object.
+#' @param occ occurrence dataframe (e.g. from paleoDiv::pdb())
+#' @param strat timescale to use for time-binning, e.g. phanerozoic (see below)
+#' @param v verbosity setting (if TRUE, a list of all stages with their corresponding number is printed)
+#' @return an occurrence dataset with additional columns for mean_ma (mean age), stg (stage) and stg_n (numbered stage)
+
+divDynprep<-function(occ,strat,v=TRUE,def_level=4){
+
+rowMeans(occ[,c("lag","eag")])->occ$mean_ma
+timebin(occ$mean_ma,strat,def_level=def_level)->occ$stg
+
+STG_N<-seq_along(unique(strat[,def_level]))
+names(STG_N)<-unique(strat[,def_level])
+
+occ$stg_n<-STG_N[occ$stg]
+
+if(v) print(STG_N)
+return(occ)
+}##
+
+
+
+
 
 
 ##plot.geotimescale()
