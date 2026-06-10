@@ -123,7 +123,7 @@ do.call(graphics::legend, args=legend)
 
 
 
-##function:
+##function: col_ass()
 # assign colors or other values using a desired function (e.g. viridis(), ggcol()) or a vector of values based on unique values or factor levels in a variable x
 #' @param x variable used to generate color vector
 #' @param FUN Function used to generate a color vector using FUN(length(unique(x))) or equivalent, or vector with same length as unique values of x
@@ -135,6 +135,7 @@ do.call(graphics::legend, args=legend)
 #' @param v verbosity setting (logical)
 #' @export col_ass
 #' @return a vector with values assigned to each element in x (if overview==FALSE), or a data.frame with each unique value of x and each assigned value.
+
 col_ass<-function(x,FUN=ggcol,na=NA, nam=names(x), order=FALSE, overview=FALSE, plus=0, v=FALSE){
 
 is_numeric_like<-function(x){#to test if endresult is numeric
