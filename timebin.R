@@ -1,4 +1,5 @@
 timebin<-function(x,strat=timescale$V2,lower=timescale$V4,upper=timescale$V5){
+  message("you are running a deprecated version of timebin, see newer version in file timescale_base.R at https://raw.githubusercontent.com/theropod1/R-scripts/refs/heads/main/timescale_base.R")
 y<-rep(NA,length(x))
 
 for(i in 1:length(x)){
