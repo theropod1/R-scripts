@@ -33,6 +33,8 @@ new_geotimescale <- function( data, bottom_name="bottom", top0=10E-8) {
 #' @param upper upper border of intervals
 #' @param def_level default hierarchy level in strat to take interval names from (default 4, for stages in the phanerozoic dataframe)
 #' @return either a single vector with binned time, or a two-column data.frame with the bottom and top ages for each time interval (if x is a character or factor)
+#' @export timebin
+
 timebin<-function(x,strat,lower=NULL,upper=NULL,def_level=4){
 strat0<-strat
 if(inherits(strat0,"geotimescale") | ("bottom"%in%colnames(strat0))  & ("top"%in%colnames(strat0))){
@@ -98,28 +100,126 @@ return(y)
 
 
 ##divDynprep
-#' prepare an occurrence dataframe for analysis in divDyn, i.e. time-bin all occurrences based on mean age and assign them to a single stage based on an ordered geotimescale object.
+#' prepare an occurrence dataframe for analysis in divDyn, i.e. time-bin all occurrences based on mean age and assign them to a single numbered stage based on an ordered geotimescale object.
 #' @param occ occurrence dataframe (e.g. from paleoDiv::pdb())
 #' @param strat timescale to use for time-binning, e.g. phanerozoic (see below)
 #' @param v verbosity setting (if TRUE, a list of all stages with their corresponding number is printed)
 #' @return an occurrence dataset with additional columns for mean_ma (mean age), stg (stage) and stg_n (numbered stage)
 
-divDynprep<-function(occ,strat,v=TRUE,def_level=4){
-
-rowMeans(occ[,c("lag","eag")])->occ$mean_ma
-timebin(occ$mean_ma,strat,def_level=def_level)->occ$stg
+divDyn_bin<-function(occ,strat=NULL,agecols=c("lag","eag"),v=TRUE,def_level=4,return="occ"){
+if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
 
 STG_N<-seq_along(unique(strat[,def_level]))
 names(STG_N)<-unique(strat[,def_level])
+strat$stg_n<-STG_N[strat[,def_level]]
 
+if(!is.null(occ)){
+rowMeans(occ[,agecols])->occ$mean_ma
+timebin(occ$mean_ma,strat,def_level=def_level)->occ$stg
 occ$stg_n<-STG_N[occ$stg]
 
 if(v) print(STG_N)
-return(occ)
+if(return=="occ") return(occ) else return(strat)}else{return(strat)}
 }##
 
 
 
+
+##function apply_divDyn
+#' apply the functions from divDyn (e.g. divDyn::divDyn or divDyn::subsample) across all occurrence dataframes in a list() object
+#' @param occ list() object containing occurrence dataframes
+#' @param strat stratigraphic table to use; should be an object of class geotimescale, or a data.frame conforming to the same structure with columns of stratigraphic hierarchy followed by bottom, top and mid for each interval. If NULL (default) phanerozoic as defined here is used Returns error if phanerozoic is not present in workspace.
+#' @param agecols character vector giving col names of lower and upper age for each occurrence (defaults to "lag" and "eag")
+#' @param tax name of taxon column in each table in occ. Elements of occ that are not data.frames or matrices do not contain this and the agecols columns are automatically skipped.
+#' @param def_level stratigraphic level to use for binning occurrences, defaults to 4 (for stages)
+#' @param minbin minimum number of time bins to run function, defaults to 3 (required for divDyn::divDyn)
+#' @param stat statistic to retain from divDyn function, defauls to "divRT" for range-through diversity
+#' @param FUN function to apply to each time-binned occurrence table in occ. Defauls to divDyn::divDyn, but can also be divDyn::subsample to perform a subsampling analysis on each dataset. Additional parameters
+#' @param v verbosity setting
+#' @param na value to substitute for NA values
+#' @param fill.na method for substituting NA values. if "bounding" (default) only NA values above and below the range of non-NA values are filled, otherwise all values are filled.
+#' @param ... additional parameters to pass on to FUN
+#' @return a data.frame containing as its first column "x" the mean age of each bin, followed by the bin number, and the diversity estimates based on the chosen parameter as returned by FUN
+#' @export apply_divDyn
+
+apply_divDyn<-function(occ, strat=NULL, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, fill.na="bounding", ...){
+if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
+if(!is.list(occ) | is.data.frame(occ)){
+print("A")
+list(occ=occ)->occ
+print(names(occ))
+}
+
+names(occ)->Nocc
+logical(length(Nocc))->occ_index
+
+for(i in 1:length(Nocc)){#go over entries in occ, determine if they are occurrence tables
+(is.data.frame(occ[[i]]) | is.matrix(occ[[i]])) && all(c(tax,agecols)%in%colnames(occ[[i]])) -> occ_index[i]
+if(occ_index[i] && "record_type"%in%colnames(occ[[i]]) && occ[[i]][1,"record_type"]!="occ") occ_index[i]<-FALSE
+}
+if(v) message(Nocc[occ_index])
+
+divDyn_bin(occ=NULL,phanerozoic, def_level=def_level,agecols=agecols,v=FALSE,return="strat")->strat #add bin numbers to strat
+
+#build divdyn matrix
+list()->dd
+
+#starting poins for lower and upper stage boundaries when creating table
+ustg<-1
+lstg<-1
+
+
+for(i in 1:sum(occ_index)){
+Nocc[occ_index][i]->I
+occ[[I]]<-divDyn_bin(occ[[I]],strat,def_level=def_level,agecols=agecols,v=FALSE,return="occ")
+
+message(I," stg_n length: ",length(unique(occ[[I]]$stg_n)))
+
+if(length(unique(occ[[I]]$stg_n))>=minbin){
+
+##apply FUN
+d <-tryCatch({FUN(x=occ[[I]], bin="stg_n", tax=tax, coll="collection_no",...)}, error=function(e){return(paste("error:", e$message))},
+warning=function(w){return(paste("warning:", w$message))
+})
+
+#extract data if successful
+if(is.data.frame(d) | is.matrix(d)){
+if(v) message(nrow(d))
+dd[[I]]<-d[,c("stg_n",stat)]
+rownames(dd[[I]])<-dd[[I]]$stg_n
+
+if(min(dd[[I]]$stg_n,na.rm=TRUE)<ustg) min(dd[[I]]$stg_n,na.rm=TRUE)->ustg
+if(max(dd[[I]]$stg_n,na.rm=TRUE)>lstg) max(dd[[I]]$stg_n,na.rm=TRUE)->lstg
+
+}else{FALSE->dd[[I]]}
+}else{FALSE->dd[[I]]}
+}
+if(v) message("bins from ", lstg, " to ", ustg)
+
+data.frame(x=NA,stg_n=seq(ustg,lstg,1))->dd_
+
+for(i in dd_$stg_n){
+which(strat$stg_n==i)->strat_index
+mean(c(max(strat$bottom[strat_index],na.rm=TRUE),min(strat$top[strat_index],na.rm=TRUE)))->dd_$x[dd_$stg_n==i]
+}
+
+for(i in names(dd)){
+if(!is.logical(dd[[i]])) dd[[i]][dd_$stg_n,2]->dd_[i]
+}
+
+if(!is.na(na)) for(i in 3:ncol(dd_)){
+dd_$stg_n[which(!is.na(dd_[,i]))] -> NotNA
+
+if(fill.na=="bounding") which(dd_$stg_n<min(NotNA,na.rm=TRUE) | dd_$stg_n>max(NotNA,na.rm=TRUE) ) -> fillNA else which(is.na(dd_[,i])) -> fillNA
+
+message("filling entries ", paste(fillNA,collapse=", ")," with ", na,"s")
+dd_[fillNA,i]<-na
+
+}
+
+
+return(dd_)
+}##
 
 
 
