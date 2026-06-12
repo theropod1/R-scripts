@@ -136,11 +136,20 @@ do.call(graphics::legend, args=legend)
 #' @export col_ass
 #' @return a vector with values assigned to each element in x (if overview==FALSE), or a data.frame with each unique value of x and each assigned value.
 
-col_ass<-function(x,FUN=ggcol,na=NA, nam=names(x), order=FALSE, overview=FALSE, plus=0, v=FALSE){
+col_ass<-function(x,FUN=ggcol, na=NA, nam=names(x), order=FALSE, overview=FALSE, plus=0, v=FALSE){
 
-is_numeric_like<-function(x){#to test if endresult is numeric
-as.numeric(x)->x_
-if(any(!is.na(x_))) return(TRUE) else return(FALSE)
+is_numeric_like<-function(x,L=TRUE){#to test if end result is numeric
+	#as.numeric(x)->x_
+	#if(any(!is.na(x_))) return(TRUE) else return(FALSE)
+	x_o<-x
+	x[which(!is.na(x))]->x
+	as.numeric(x)->x_
+
+	if(L){
+		if(all(!is.na(x_))) return(TRUE) else return(FALSE)
+	}else{
+		if(all(!is.na(x_))) return(as.numeric(x_o)) else return(x_o)
+	}
 }
 
 if(is.null(na)){
@@ -176,8 +185,8 @@ if(any(is.na(lev))) FUN2<-c(FUN2,na)
 names(FUN2)<-lev
 if(v) print(FUN2)
 
-if(is_numeric_like(FUN2)) as.numeric(FUN2)->FUN2
 if(overview){
+if(is_numeric_like(FUN2)) as.numeric(FUN2)->FUN2
 names(FUN2)<-NULL
 return(data.frame(lev=lev,FUN=FUN2))
 }else{

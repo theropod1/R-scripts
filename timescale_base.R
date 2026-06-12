@@ -467,12 +467,12 @@ Mesozoic,Jurassic,Late Jurassic,Tithonian,149.2
 Mesozoic,Jurassic,Late Jurassic,Kimmeridgian,154.8
 Mesozoic,Jurassic,Late Jurassic,Oxfordian,161.5
 Mesozoic,Jurassic,Middle Jurassic,Callovian,165.3
-Mesozoic,Jurassic,Middle Jurassic,Bathonian,168.3
-Mesozoic,Jurassic,Middle Jurassic,Bajocian,170.3
+Mesozoic,Jurassic,Middle Jurassic,Bathonian,168.2
+Mesozoic,Jurassic,Middle Jurassic,Bajocian,170.9
 Mesozoic,Jurassic,Middle Jurassic,Aalenian,174.7
-Mesozoic,Jurassic,Early Jurassic,Toarcian,182.7
-Mesozoic,Jurassic,Early Jurassic,Pliensbachian,190.8
-Mesozoic,Jurassic,Early Jurassic,Sinemurian,199.3
+Mesozoic,Jurassic,Early Jurassic,Toarcian,184.2
+Mesozoic,Jurassic,Early Jurassic,Pliensbachian,192.9
+Mesozoic,Jurassic,Early Jurassic,Sinemurian,199.5
 Mesozoic,Jurassic,Early Jurassic,Hettangian,201.4
 Mesozoic,Triassic,Late Triassic,Rhaetian,205.7
 Mesozoic,Triassic,Late Triassic,Norian,227.3

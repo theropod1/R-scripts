@@ -395,6 +395,52 @@ return(out)#indices of each element of ordered in unordered
 
 
 
+##function is_numeric_like()
+#' test if a vector or matrix can be coerced to numeric
+#' @param x vector or matrix to be potentially coerced to numeric
+#' @param L return logical (default TRUE)
+#' @return logical indicating whether x can be coerced to numeric, or (if L==FALSE) x, coerced to numeric if possible
+#' @export is_numeric_like
+
+is_numeric_like<-function(x,L=TRUE){#to test if end result is numeric
+	#as.numeric(x)->x_
+	#if(any(!is.na(x_))) return(TRUE) else return(FALSE) #old version
+	x_o<-x
+	x[which(!is.na(x))]->x
+	as.numeric(x)->x_
+
+	if(L){
+		if(all(!is.na(x_))) return(TRUE) else return(FALSE)
+	}else{
+		if(all(!is.na(x_))) return(as.numeric(x_o)) else return(x_o)
+	}
+}##
+
+
+
+##function SC()
+#' Return a significance code based on a p value
+#' @param p p value
+#' @return a vector of significance codes matching elements in p
+#' @export SC
+
+SC<-function(p){#significance codes
+character(length(p))->out
+for(i in 1:length(p)){
+sc<-""
+if(p[i]>0.1) "n.s."->sc
+if(p[i]<=0.1 ) "."->sc
+if(p[i]<=0.05) "*"->sc
+if(p[i]<=0.01) "**"->sc
+if(p[i]<=0.001) "***"->sc
+if(p[i]<=0.0001) "****"->sc
+
+out[i]<-sc
+}
+message("signif. codes: n.s.>0.1>.>0.05>*>0.01**>0.001>***>0.0001>****")
+out
+}
+
 
 ##function bracket()
 #' plot a bracket at a given x or y position
