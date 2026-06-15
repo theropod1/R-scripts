@@ -12,8 +12,10 @@ new_geotimescale <- function( data, bottom_name="bottom", top0=10E-8) {
  if(is.character(data) && length(data)==1 && file.exists(data)) read.csv(data) -> data
  
  data[order(data[,bottom_name]),]->data
+ colnames(data)[which(colnames(data)!=bottom_name)]->CNAM
  
   structure( data.frame( data[,which(colnames(data)!=bottom_name)], bottom=data[,bottom_name] ), class = c("geotimescale","data.frame") ) -> out
+  colnames(out)<-c(CNAM,"bottom")
   out$top<-c(top0, out$bottom)[1:length(out$bottom)]
   out$mid<-rowMeans(out[,c("bottom","top")])
   
@@ -128,10 +130,10 @@ if(return=="occ") return(occ) else return(strat)}else{return(strat)}
 ##function apply_divDyn
 #' apply the functions from divDyn (e.g. divDyn::divDyn or divDyn::subsample) across all occurrence dataframes in a list() object
 #' @param occ list() object containing occurrence dataframes
-#' @param strat stratigraphic table to use; should be an object of class geotimescale, or a data.frame conforming to the same structure with columns of stratigraphic hierarchy followed by bottom, top and mid for each interval. If NULL (default) phanerozoic as defined here is used Returns error if phanerozoic is not present in workspace.
+#' @param strat stratigraphic table to use; should be an object of class geotimescale, or a data.frame conforming to the same structure with columns of stratigraphic hierarchy followed by bottom, top and mid for each interval. Alternatively can be a numeric vector of length 3 giving the starting age, ending age and bin width to be used to calculate diversity estimates for bins of uniform length without regard for stratigraphic boundaries. If NULL (default) phanerozoic as defined here is used, or c(650.123,0,10) for ten-Ma bins starting at 650.123 Ma.
 #' @param agecols character vector giving col names of lower and upper age for each occurrence (defaults to "lag" and "eag")
 #' @param tax name of taxon column in each table in occ. Elements of occ that are not data.frames or matrices do not contain this and the agecols columns are automatically skipped.
-#' @param def_level stratigraphic level to use for binning occurrences, defaults to 4 (for stages)
+#' @param def_level stratigraphic level to use for binning occurrences, defaults to 4 (for stages in phanerozoic)
 #' @param minbin minimum number of time bins to run function, defaults to 3 (required for divDyn::divDyn)
 #' @param stat statistic to retain from divDyn function, defauls to "divRT" for range-through diversity
 #' @param FUN function to apply to each time-binned occurrence table in occ. Defauls to divDyn::divDyn, but can also be divDyn::subsample to perform a subsampling analysis on each dataset. Additional parameters
@@ -144,6 +146,16 @@ if(return=="occ") return(occ) else return(strat)}else{return(strat)}
 
 apply_divDyn<-function(occ, strat=NULL, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, fill.na="bounding", ...){
 if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
+if(is.null(strat) & !exists("phanerozoic")) strat<-c(650.123,0,10)
+
+if(is.numeric(strat) && length(strat)>2){ #generate diversity estimates at regular intervals if strat is a numeric vector giving the start time and resolution
+def_level<-1
+strat_tmp<-seq(strat[1],strat[2],-abs(strat[3]))
+strat<-data.frame(interval=rev(seq_along(strat_tmp)), bottom=strat_tmp)
+strat<-new_geotimescale(strat, bottom_name="bottom", top0=0)
+print(strat)
+}
+
 if(!is.list(occ) | is.data.frame(occ)){
 print("A")
 list(occ=occ)->occ
@@ -159,7 +171,7 @@ if(occ_index[i] && "record_type"%in%colnames(occ[[i]]) && occ[[i]][1,"record_typ
 }
 if(v) message(Nocc[occ_index])
 
-divDyn_bin(occ=NULL,phanerozoic, def_level=def_level,agecols=agecols,v=FALSE,return="strat")->strat #add bin numbers to strat
+divDyn_bin(occ=NULL,strat, def_level=def_level,agecols=agecols,v=FALSE,return="strat")->strat #add bin numbers to strat
 
 #build divdyn matrix
 list()->dd
