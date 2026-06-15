@@ -421,14 +421,15 @@ is_numeric_like<-function(x,L=TRUE){#to test if end result is numeric
 ##function SC()
 #' Return a significance code based on a p value
 #' @param p p value
+#' @param v verbosity (default=TRUE)
 #' @return a vector of significance codes matching elements in p
 #' @export SC
 
-SC<-function(p){#significance codes
+SC<-function(p,v=TRUE){#significance codes
 character(length(p))->out
 for(i in 1:length(p)){
 sc<-""
-if(p[i]>0.1) "n.s."->sc
+if(p[i]>0.1) "ns"->sc
 if(p[i]<=0.1 ) "."->sc
 if(p[i]<=0.05) "*"->sc
 if(p[i]<=0.01) "**"->sc
@@ -437,7 +438,7 @@ if(p[i]<=0.0001) "****"->sc
 
 out[i]<-sc
 }
-message("signif. codes: n.s.>0.1>.>0.05>*>0.01**>0.001>***>0.0001>****")
+if(v) message("signif. codes: ns>0.1>.>0.05>*>0.01**>0.001>***>0.0001>****")
 out
 }
 
