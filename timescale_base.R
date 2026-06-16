@@ -146,11 +146,11 @@ if(return=="occ") return(occ) else return(strat)}else{return(strat)}
 
 apply_divDyn<-function(occ, strat=NULL, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, fill.na="bounding", ...){
 if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
-if(is.null(strat) & !exists("phanerozoic")) strat<-c(650.123,0,10)
+if(is.null(strat) & !exists("phanerozoic")) strat<-c(650.123,-10)
 
-if(is.numeric(strat) && length(strat)>2){ #generate diversity estimates at regular intervals if strat is a numeric vector giving the start time and resolution
+if(is.numeric(strat) && length(strat)>1){ #generate diversity estimates at regular intervals if strat is a numeric vector giving the start time and resolution
 def_level<-1
-strat_tmp<-seq(strat[1],strat[2],-abs(strat[3]))
+strat_tmp<-seq(strat[1],0,-abs(strat[2]))
 strat<-data.frame(interval=rev(seq_along(strat_tmp)), bottom=strat_tmp)
 strat<-new_geotimescale(strat, bottom_name="bottom", top0=0)
 print(strat)
@@ -176,7 +176,7 @@ divDyn_bin(occ=NULL,strat, def_level=def_level,agecols=agecols,v=FALSE,return="s
 #build divdyn matrix
 list()->dd
 
-#starting poins for lower and upper stage boundaries when creating table
+#starting points for lower and upper stage boundaries when creating table
 ustg<-1
 lstg<-1
 

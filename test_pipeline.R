@@ -102,7 +102,7 @@ robust_anova_p<-out$Robust_ANOVA_res$p.value
 
 if(robust_anova_p<p.crit) message("ROBUST ANOVA: significant differences were found in robust anova (p=",robust_anova_p,")")
 if(robust_anova_p>p.crit) message("no significant differences were found in robust anova (p=",robust_anova_p,")")
-if(robust_anova_p>p.crit && anova_p<(2*p.crit)) message("…but p is less than twice the critical value, indicating possible strong tendencies")
+if(robust_anova_p>p.crit && robust_anova_p<(2*p.crit)) message("…but p is less than twice the critical value, indicating possible strong tendencies")
 
 if( anova_df>1 && robust_anova_p<(2*p.crit) ) {
 
@@ -128,7 +128,7 @@ kruskal_p<-out$kruskal$p.value
 
 if(kruskal_p<p.crit) message("Kruskal-Wallis test: significant differences were found in kruskal-wallis test (p=",kruskal_p,")")
 if(kruskal_p>p.crit) message("Kruskal-Wallis test: no significant differences were found in kruskal-wallis test (p=",kruskal_p,")")
-if(kruskal_p>p.crit && anova_p<(2*p.crit)) message("…but p is less than twice the critical value, indicating possible strong tendencies")
+if(kruskal_p>p.crit && kruskal_p<(2*p.crit)) message("…but p is less than twice the critical value, indicating possible strong tendencies")
 
 if( anova_df>1 && kruskal_p<(2*p.crit) ) {
 rstatix::dunn_test(data=mf, y~x, p.adjust.method = "holm")->out$dunn
