@@ -3,11 +3,11 @@
 #'
 #' @param data a matrix or data.frame, or a filename to read using read.csv(), containing a hierarchical stratigraphic table
 #' @param bottom_name character string giving the name of the column containing the bottom age for each interval
-#' @param top0 what value to use as top value for all intervals (defaults to 10E-8 for compatibility with log-transformed plotting)
+#' @param top0 what value to use as top value for all intervals (defaults to 0, but can be set to small positive number if log-transformed plotting compatibility is desired)
 #' @return A 'geotimescale' object.
 #' @export new_geotimescale
 
-new_geotimescale <- function( data, bottom_name="bottom", top0=10E-8) {
+new_geotimescale <- function( data, bottom_name="bottom", top0=0) {
 
  if(is.character(data) && length(data)==1 && file.exists(data)) read.csv(data) -> data
  
@@ -125,12 +125,75 @@ if(return=="occ") return(occ) else return(strat)}else{return(strat)}
 }##
 
 
+##function blockdiv()
+#' convert a data.frame containing diversity estimates by mean age to a data.frame containing two rows for each bin, one at the lower and one at the upper boundary, for purposes of plotting
+#' @param divtab diversity table as output by apply_divDyn, should contain x (mean age) and optionally xmax and xmin values for each diversity estimate. If xmin and xmax values cannot be found, an attempt is made to determine the regular interval at which x is spaced.
+#' @param x name of the column containing the ages
+#' @param xmax name of the column containing the maximum ages of each bin
+#' @param xmin name of the column containing the minimum ages of each bin
+#' @param tol Tolerance value to subtract from the age of the lower boundary of each bin to make ages continuous and make sure bins remain ordered correctly if ordered by another function
+#' @param v verbosity setting
+#' @return a data.frame with each row in divtap repeated and respective bottom and top ages substituted for x
+#' @export blockdiv
+
+blockdiv<-function(divtab, x="x", xmax="xmax", xmin="xmin", tol=1E-6, v=FALSE){
+
+int_width0<-divtab[3,x]-divtab[2,x]
+int_width1<-divtab[2,x]-divtab[1,x]
+
+if(int_width0<0){ #order ascending age
+divtab[order(divtab[,x]),]->divtab
+}
+
+blocktab<-rbind(divtab,divtab)
+lookup<-matrix(c(1:nrow(blocktab)),byrow=TRUE,ncol=2)
+
+if(xmax%in%colnames(divtab) & xmin%in%colnames(divtab)){ #if there are bottom and top ages
+
+for(i in 1:nrow(divtab)){
+int_width<-divtab[(i+1),x]-divtab[i,x]
+divtab[i,]->tmp
+rbind(tmp,tmp)->tmp
+tmp[1,x]<-tmp[1,xmin]#top
+tmp[2,x]<-tmp[2,xmax]-tol#bottom
+blocktab[lookup[i,],]<-tmp
+}
+
+}else{#no bottom and top ages given for intervals, work with intervals of unit length
+
+for(i in 1:nrow(divtab)){
+int_width<-divtab[(i+1),x]-divtab[i,x]
+divtab[i,]->tmp
+rbind(tmp,tmp)->tmp
+tmp[1,x]<-tmp[1,x]-0.5*int_width #top
+tmp[2,x]<-tmp[2,x]+0.5*int_width-tol #bottom
+blocktab[lookup[i,],]<-tmp
+}
+
+ #handle a first segment of different length
+int_width<-(blocktab[3,x]-divtab[1,x])*2
+divtab[1,]->tmp
+rbind(tmp,tmp)->tmp
+tmp[1,x]<-tmp[1,x]-0.5*int_width #top
+tmp[2,x]<-tmp[2,x]+0.5*int_width #bottom
+blocktab[lookup[1,],]<-tmp
+
+if(v) message(int_width0)
+if(v) message(int_width1)
+
+}
+if(v) print(lookup)
+
+return(blocktab)
+}##
+
 
 
 ##function apply_divDyn
 #' apply the functions from divDyn (e.g. divDyn::divDyn or divDyn::subsample) across all occurrence dataframes in a list() object
 #' @param occ list() object containing occurrence dataframes
-#' @param strat stratigraphic table to use; should be an object of class geotimescale, or a data.frame conforming to the same structure with columns of stratigraphic hierarchy followed by bottom, top and mid for each interval. Alternatively can be a numeric vector of length 3 giving the starting age, ending age and bin width to be used to calculate diversity estimates for bins of uniform length without regard for stratigraphic boundaries. If NULL (default) phanerozoic as defined here is used, or c(650.123,0,10) for ten-Ma bins starting at 650.123 Ma.
+#' @param strat stratigraphic table to use; should be an object of class geotimescale, or a data.frame conforming to the same structure with columns of stratigraphic hierarchy followed by bottom, top and mid for each interval. Alternatively can be a numeric vector of length 2 giving the starting age and bin width to be used to calculate diversity estimates for bins of uniform length without regard for stratigraphic boundaries. If NULL (default) phanerozoic as defined here is used, or c(4600,10) for ten-Ma bins starting at 650.123 Ma.
+#' @param blocky Logical indicating whether rows in the output dataframe should be repeated to produce a "blocky" plotting dataframe using blockdiv(). Default FALSE, returns data.frame with single row per time bin
 #' @param agecols character vector giving col names of lower and upper age for each occurrence (defaults to "lag" and "eag")
 #' @param tax name of taxon column in each table in occ. Elements of occ that are not data.frames or matrices do not contain this and the agecols columns are automatically skipped.
 #' @param def_level stratigraphic level to use for binning occurrences, defaults to 4 (for stages in phanerozoic)
@@ -144,9 +207,9 @@ if(return=="occ") return(occ) else return(strat)}else{return(strat)}
 #' @return a data.frame containing as its first column "x" the mean age of each bin, followed by the bin number, and the diversity estimates based on the chosen parameter as returned by FUN
 #' @export apply_divDyn
 
-apply_divDyn<-function(occ, strat=NULL, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, fill.na="bounding", ...){
+apply_divDyn<-function(occ, strat=NULL, blocky=FALSE, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, fill.na="bounding", ...){
 if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
-if(is.null(strat) & !exists("phanerozoic")) strat<-c(650.123,-10)
+if(is.null(strat) & !exists("phanerozoic")) strat<-c(4600,-10)
 
 if(is.numeric(strat) && length(strat)>1){ #generate diversity estimates at regular intervals if strat is a numeric vector giving the start time and resolution
 def_level<-1
@@ -208,11 +271,13 @@ if(max(dd[[I]]$stg_n,na.rm=TRUE)>lstg) max(dd[[I]]$stg_n,na.rm=TRUE)->lstg
 }
 if(v) message("bins from ", lstg, " to ", ustg)
 
-data.frame(x=NA,stg_n=seq(ustg,lstg,1))->dd_
+data.frame(x=NA,stg_n=seq(ustg,lstg,1),xmax=NA,xmin=NA)->dd_
 
 for(i in dd_$stg_n){
 which(strat$stg_n==i)->strat_index
 mean(c(max(strat$bottom[strat_index],na.rm=TRUE),min(strat$top[strat_index],na.rm=TRUE)))->dd_$x[dd_$stg_n==i]
+max(strat$bottom[strat_index],na.rm=TRUE)->dd_$xmax[dd_$stg_n==i]
+min(strat$top[strat_index],na.rm=TRUE)->dd_$xmin[dd_$stg_n==i]
 }
 
 for(i in names(dd)){
@@ -229,6 +294,7 @@ dd_[fillNA,i]<-na
 
 }
 
+if(blocky) blockdiv(dd_)->dd_
 
 return(dd_)
 }##
