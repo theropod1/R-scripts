@@ -377,30 +377,16 @@ c(plotlim[3],plotlim[3]+plotheight/8)->fromto
 }
 }
 
-length(levels)->nlev
-abs(diff(range(fromto)))->width
-if(v) print(fromto)
-if(v) print(width)
-
-if(is.null(widths)){ 
-ifelse(rotatel, 1/nlev/width_adjust,1/nlev*width_adjust)->widths
-
-if(horiz) ifelse(!rotatel, 1/nlev/width_adjust,1/nlev*width_adjust)->widths
-if(v) print(widths)
-}
-widths/sum(widths)*width->widths
-if(fromto[2]<fromto[1]) widths<-widths*-1
-if(v) print(widths)
 
 #plotting
-if(!add){
+if(!add){ #create standaloneplot
 plot_args->plot_args1
 
-if(!("xlim"%in%names(plot_args))) plot_args1$xlim<-fromto
+if(!("xlim"%in%names(plot_args))) if(length(fromto)>1) plot_args1$xlim<-fromto[1:2]  else plot_args1$xlim<-c(0,fromto)
 if(!("xlim"%in%names(plot_args)) && horiz==TRUE) plot_args1$xlim<-rev(range(c(x$bottom,x$top)))
 
 if(!("ylim"%in%names(plot_args))) plot_args1$ylim<-rev(range(c(x$bottom,x$top)))
-if(!("ylim"%in%names(plot_args)) && horiz==TRUE) plot_args1$ylim<-fromto
+if(!("ylim"%in%names(plot_args)) && horiz==TRUE) if(length(fromto)>1) plot_args1$ylim<-fromto[1:2] else plot_args1$ylim<-c(0,fromto)
 
 if(!("xlab"%in%names(plot_args))) plot_args1$xlab<-""
 if(!("ylab"%in%names(plot_args))) plot_args1$ylab<-""
@@ -414,10 +400,31 @@ plot_args1$y<-NA
 plot_args1$x<-NA
 
 do.call(plot, plot_args1)
+
+
+}
 par("usr")->plotlim
 abs(diff(range(plotlim[1:2])))->plotwidth
 abs(diff(range(plotlim[3:4])))->plotheight
+
+if(length(fromto)==1){ if(horiz) fromto<-c(plotlim[3],fromto) else fromto<-c(plotlim[1],fromto)}
+
+#define widths for timescale
+length(levels)->nlev
+abs(diff(range(fromto)))->width
+if(v) print(fromto)
+if(v) print(width)
+
+if(is.null(widths)){ 
+ifelse(rotatel, 1/nlev/width_adjust,1/nlev*width_adjust)->widths
+
+if(horiz) ifelse(!rotatel, 1/nlev/width_adjust,1/nlev*width_adjust)->widths
+if(v) print(widths)
 }
+
+widths/sum(widths)*width->widths
+if(fromto[2]<fromto[1]) widths<-widths*-1
+if(v) print(widths)
 
 if(add & v) message("adding to existing plot") else if(v) message("creating standalone plot with par(\"usr\") = ",paste(plotlim,collapse=" "))
 
