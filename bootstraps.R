@@ -150,7 +150,7 @@ return(CI(x_))
 }
 }
 ##
-warning("bootCI() and p_bootCI() have moved and are now being updated here: https://raw.githubusercontent.com/theropod1/R-scripts/refs/heads/main/boot_cilm.R")
+warning("bootCI() and p_bootCI() have moved and are now being maintained here: https://raw.githubusercontent.com/theropod1/R-scripts/refs/heads/main/boot_cilm.R")
 
 ##example
 #pnorm(1/sqrt(1^2+1^2)) #probability for the distance between two normal distributions with a difference in means of 1 assuming perfect normality
