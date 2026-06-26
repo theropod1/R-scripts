@@ -1,3 +1,24 @@
+##function straticol()
+#' return a named vector of the standard stratigraphic color scheme
+#' @param nam optional name or vector of names of stratigraphic intervals to return color values for
+#' @return a named vector of stratigraphic colors, matching nam if supplied
+#' @export straticol
+
+straticol<-function(nam=NULL,defaultcol=NA){
+	stratifill<-c('#FDEDEC','#FDEDEC','#FDECE4','#FDECE4','#FEECDB','#FEECDB','#FEEBD2','#FFF2D3','#FFF2C7','#FFF2C7','#FFF2BA','#FFEDB3','#FFF0B9','#FFEFAF','#F9F97F','#FFFFBF','#FFF2CD','#FFFFB3','#FFF2C3','#FFFF99','#FFFF73','#FFFF66','#FFEC8C','#FFFF59','#FFFF4D','#FFEC73','#FFFF41','#FFFF33','#FFEC55','#FFFF00','#FFE619','#FEE6AA','#FED99A','#FEC07A','#FDCDA1','#FDC091','#FDB482','#FCA773','#FDB46C','#FDBF6F','#FEBF65','#FDB462','#FDA75F','#FD9A52','#F2F91D','#F2FA8C','#E6F47F','#D9EF74','#CCE968','#BFE35D','#B3DE53','#A6D84A','#CCEA97','#BFE48A','#B3DF7F','#A6D975','#99D36A','#8CCD60','#8CCD57','#7FC64E','#D9F1F7','#CCECF4','#BFE7F1','#B3E3EE','#BFE7E5','#B3E2E3','#A6DDE0','#9AD9DD','#80CFD8','#99CEE3','#80C5DD','#67BCD8','#4EB3D3','#42AED0','#34B2C9','#E3B9DB','#D6AAD3','#C99BCB','#BD8CC3','#C983BF','#BC75B7','#B168B1','#B051A5','#A4469F','#983999','#812B92','#67C5CA','#FCC0B2','#FCB4A2','#FBA794','#FB9A85','#FB8D76','#FB8069','#FB745C','#E38776','#E37B68','#E36F5C','#E36350','#EF5845','#F04028','#CCD4C7','#BFD0C5','#BFD0BA','#B3CBB9','#A6C7B7','#99C2B5','#8CBEB4','#7EBCC6','#BFC26B','#B3BE6C','#A6B96C','#99B46C','#8CB06C','#80AB6C','#678F66','#67A599','#F2EDB3','#F2EDAD','#F1E19D','#F1E185','#F1D576','#F1C868','#E5D075','#E5C468','#E5B75A','#E5AC4D','#CB8C37','#E6F5E1','#D9F0DF','#CCECDD','#BFE6CF','#CCEBD1','#BFE6C3','#B3E1C2','#BFE6CF','#B3E1C2','#A6DCB5','#99D7B3','#B3E1B6','#A6DBAB','#99D69F','#8CD094','#7FCA93','#74C69C','#66C092','#4DB47E','#41B087','#33A97E','#1A9D6F','#009270','#E6F5C9','#D9F0BB','#CCEBAE','#B3E095','#CCDFAA','#BFD99D','#B3D492','#A6CF86','#B3CA8E','#A6C583','#99C078','#A6BA80','#99B575','#8CB06C','#7FA056','#99C08D','#9AD9DD','#FED96A','#FECC5C','#FEBF4E','#FEB342','#FED99A','#FDCC8A','#FDC07A','#FDB462','#F875A7','#F76898','#F75B89','#F74F7C','#F74370','#F73563','#FAA7C8','#F99BC1','#F881B5','#F768A9','#F668B2','#F4449F','#E61D8C','#DA037F','#F0047F','#AE027E','#F74370','#FDEDEC','#FEECDB','#FFF2D3','#FFF0B9','#FFF2CD','#FFF2C3','#FFEC8C','#FFEC55','#A6D84A','#8CCD57','#B3E3EE','#42AED0','#BD8CC3','#983999','#BFD0BA','#8CBEB4','#B3BE6C','#80AB6C','#F1E19D','#E5AC4D','#7FCA93','#1A9D6F')
+
+	names(stratifill)<-c('Meghalayan','Upper Holocene','Northgrippian','Middle Holocene','Greenlandian','Lower Holocene','Holocene','Upper Pleistocene','Chibanian','Middle Pleistocene','Calabrian','Gelasian','Lower Pleistocene','Pleistocene','Quaternary','Piacenzian','Upper Pliocene','Zanclean','Lower Pliocene','Pliocene','Messinian','Tortonian','Upper Miocene','Serravallian','Langhian','Middle Miocene','Burdigalian','Aquitanian','Lower Miocene','Miocene','Neogene','Chattian','Rupelian','Oligocene','Priabonian','Bartonian','Lutetian','Ypresian','Eocene','Thanetian','Selandian','Danian','Paleocene','Paleogene','Cenozoic','Maastrichtian','Campanian','Santonian','Coniacian','Turonian','Cenomanian','Upper Cretaceous','Albian','Aptian','Barremian','Hauterivian','Valanginian','Berriasian','Lower Cretaceous','Cretaceous','Tithonian','Kimmeridgian','Oxfordian','Upper Jurassic','Callovian','Bathonian','Bajocian','Aalenian','Middle Jurassic','Toarcian','Pliensbachian','Sinemurian','Hettangian','Lower Jurassic','Jurassic','Rhaetian','Norian','Carnian','Upper Triassic','Ladinian','Anisian','Middle Triassic','Olenekian','Induan','Lower Triassic','Triassic','Mesozoic','Changhsingian','Wuchiapingian','Lopingian','Capitanian','Wordian','Roadian','Guadalupian','Kungurian','Artinskian','Sakmarian','Asselian','Cisuralian','Permian','Gzhelian','Kasimovian','Upper Pennsylvanian','Moscovian','Middle Pennsylvanian','Bashkirian','Lower Pennsylvanian','Pennsylvanian','Serpukhovian','Upper Mississippian','Visean','Middle Mississippian','Tournaisian','Lower Mississippian','Mississippian','Carboniferous','Famennian','Frasnian','Upper Devonian','Givetian','Eifelian','Middle Devonian','Emsian','Pragian','Lochkovian','Lower Devonian','Devonian','Pridoli','Ludfordian','Gorstian','Ludlow','Homerian','Sheinwoodian','Wenlock','Telychian','Aeronian','Rhuddanian','Llandovery','Silurian','Hirnantian','Katian','Sandbian','Upper Ordovician','Darriwilian','Dapingian','Middle Ordovician','Floian','Tremadocian','Lower Ordovician','Ordovician','Cambrian 10','Jiangshanian','Paibian','Furongian','Guzhangian','Drumian','Wuliuan','Miaolingian','Cambrian 4','Cambrian 3','Cambrian Series 2','Cambrian 2','Fortunian','Terreneuvian','Cambrian','Paleozoic','Phanerozoic','Ediacaran','Cryogenian','Tonian','Neoproterozoic','Stenian','Ectasian','Calymmian','Mesoproterozoic','Statherian','Orosirian','Rhyacian','Siderian','Paleoproterozoic','Proterozoic','unnamed1','Neoarchean','unnamed2','Mesoarchean','unnamed3','Paleoarchean','unnamed4','Eoarchean','Archean','Hadean','Precambrian','Late Holocene','Early Holocene','Late Pleistocene','Early Pleistocene','Late Pliocene','Early Pliocene','Late Miocene','Early Miocene','Late Cretaceous','Early Cretaceous','Late Jurassic','Early Jurassic','Late Triassic','Early Triassic','Late Pennsylvanian','Early Pennsylvanian','Late Mississippian','Early Mississippian','Late Devonian','Early Devonian','Late Ordovician','Early Ordovician')
+	
+	if(!is.null(nam) && any(nam%in%names(stratifill))){
+	sf<-rep(defaultcol,length(nam))
+	for(i in 1:length(sf)) if(nam[i] %in% names(stratifill)) sf[i]<-stratifill[which(names(stratifill)==nam[i])]
+	names(sf)<-nam
+	return(sf)
+	}else{return(stratifill)}
+}##
+
+
+
 ## class constructor for geotimescale
 #' Create a custom geotimescale object
 #'
@@ -19,24 +40,24 @@ new_geotimescale <- function( data, bottom_name="bottom", top0=0,append_cols=cha
  unique(unlist(data[,CNAM]))->unique_intervals
  
   structure( data.frame( data[,which(colnames(data)!=bottom_name)], bottom=data[,bottom_name] ), class = c("geotimescale","data.frame") ) -> out
-  colnames(out)<-c(CNAM,"bottom")
+  colnames(out)<-c(CNAM,"bottom") #reorder columns
+  #calculate top and mid of each row in geotimescale
   out$top<-c(top0, out$bottom)[1:length(out$bottom)]
   out$mid<-rowMeans(out[,c("bottom","top")])
   
-  stratifill<-c('#FDEDEC','#FDEDEC','#FDECE4','#FDECE4','#FEECDB','#FEECDB','#FEEBD2','#FFF2D3','#FFF2C7','#FFF2C7','#FFF2BA','#FFEDB3','#FFF0B9','#FFEFAF','#F9F97F','#FFFFBF','#FFF2CD','#FFFFB3','#FFF2C3','#FFFF99','#FFFF73','#FFFF66','#FFEC8C','#FFFF59','#FFFF4D','#FFEC73','#FFFF41','#FFFF33','#FFEC55','#FFFF00','#FFE619','#FEE6AA','#FED99A','#FEC07A','#FDCDA1','#FDC091','#FDB482','#FCA773','#FDB46C','#FDBF6F','#FEBF65','#FDB462','#FDA75F','#FD9A52','#F2F91D','#F2FA8C','#E6F47F','#D9EF74','#CCE968','#BFE35D','#B3DE53','#A6D84A','#CCEA97','#BFE48A','#B3DF7F','#A6D975','#99D36A','#8CCD60','#8CCD57','#7FC64E','#D9F1F7','#CCECF4','#BFE7F1','#B3E3EE','#BFE7E5','#B3E2E3','#A6DDE0','#9AD9DD','#80CFD8','#99CEE3','#80C5DD','#67BCD8','#4EB3D3','#42AED0','#34B2C9','#E3B9DB','#D6AAD3','#C99BCB','#BD8CC3','#C983BF','#BC75B7','#B168B1','#B051A5','#A4469F','#983999','#812B92','#67C5CA','#FCC0B2','#FCB4A2','#FBA794','#FB9A85','#FB8D76','#FB8069','#FB745C','#E38776','#E37B68','#E36F5C','#E36350','#EF5845','#F04028','#CCD4C7','#BFD0C5','#BFD0BA','#B3CBB9','#A6C7B7','#99C2B5','#8CBEB4','#7EBCC6','#BFC26B','#B3BE6C','#A6B96C','#99B46C','#8CB06C','#80AB6C','#678F66','#67A599','#F2EDB3','#F2EDAD','#F1E19D','#F1E185','#F1D576','#F1C868','#E5D075','#E5C468','#E5B75A','#E5AC4D','#CB8C37','#E6F5E1','#D9F0DF','#CCECDD','#BFE6CF','#CCEBD1','#BFE6C3','#B3E1C2','#BFE6CF','#B3E1C2','#A6DCB5','#99D7B3','#B3E1B6','#A6DBAB','#99D69F','#8CD094','#7FCA93','#74C69C','#66C092','#4DB47E','#41B087','#33A97E','#1A9D6F','#009270','#E6F5C9','#D9F0BB','#CCEBAE','#B3E095','#CCDFAA','#BFD99D','#B3D492','#A6CF86','#B3CA8E','#A6C583','#99C078','#A6BA80','#99B575','#8CB06C','#7FA056','#99C08D','#9AD9DD','#FED96A','#FECC5C','#FEBF4E','#FEB342','#FED99A','#FDCC8A','#FDC07A','#FDB462','#F875A7','#F76898','#F75B89','#F74F7C','#F74370','#F73563','#FAA7C8','#F99BC1','#F881B5','#F768A9','#F668B2','#F4449F','#E61D8C','#DA037F','#F0047F','#AE027E','#F74370','#FDEDEC','#FEECDB','#FFF2D3','#FFF0B9','#FFF2CD','#FFF2C3','#FFEC8C','#FFEC55','#A6D84A','#8CCD57','#B3E3EE','#42AED0','#BD8CC3','#983999','#BFD0BA','#8CBEB4','#B3BE6C','#80AB6C','#F1E19D','#E5AC4D','#7FCA93','#1A9D6F')
-  names(stratifill)<-c('Meghalayan','Upper Holocene','Northgrippian','Middle Holocene','Greenlandian','Lower Holocene','Holocene','Upper Pleistocene','Chibanian','Middle Pleistocene','Calabrian','Gelasian','Lower Pleistocene','Pleistocene','Quaternary','Piacenzian','Upper Pliocene','Zanclean','Lower Pliocene','Pliocene','Messinian','Tortonian','Upper Miocene','Serravallian','Langhian','Middle Miocene','Burdigalian','Aquitanian','Lower Miocene','Miocene','Neogene','Chattian','Rupelian','Oligocene','Priabonian','Bartonian','Lutetian','Ypresian','Eocene','Thanetian','Selandian','Danian','Paleocene','Paleogene','Cenozoic','Maastrichtian','Campanian','Santonian','Coniacian','Turonian','Cenomanian','Upper Cretaceous','Albian','Aptian','Barremian','Hauterivian','Valanginian','Berriasian','Lower Cretaceous','Cretaceous','Tithonian','Kimmeridgian','Oxfordian','Upper Jurassic','Callovian','Bathonian','Bajocian','Aalenian','Middle Jurassic','Toarcian','Pliensbachian','Sinemurian','Hettangian','Lower Jurassic','Jurassic','Rhaetian','Norian','Carnian','Upper Triassic','Ladinian','Anisian','Middle Triassic','Olenekian','Induan','Lower Triassic','Triassic','Mesozoic','Changhsingian','Wuchiapingian','Lopingian','Capitanian','Wordian','Roadian','Guadalupian','Kungurian','Artinskian','Sakmarian','Asselian','Cisuralian','Permian','Gzhelian','Kasimovian','Upper Pennsylvanian','Moscovian','Middle Pennsylvanian','Bashkirian','Lower Pennsylvanian','Pennsylvanian','Serpukhovian','Upper Mississippian','Visean','Middle Mississippian','Tournaisian','Lower Mississippian','Mississippian','Carboniferous','Famennian','Frasnian','Upper Devonian','Givetian','Eifelian','Middle Devonian','Emsian','Pragian','Lochkovian','Lower Devonian','Devonian','Pridoli','Ludfordian','Gorstian','Ludlow','Homerian','Sheinwoodian','Wenlock','Telychian','Aeronian','Rhuddanian','Llandovery','Silurian','Hirnantian','Katian','Sandbian','Upper Ordovician','Darriwilian','Dapingian','Middle Ordovician','Floian','Tremadocian','Lower Ordovician','Ordovician','Cambrian 10','Jiangshanian','Paibian','Furongian','Guzhangian','Drumian','Wuliuan','Miaolingian','Cambrian 4','Cambrian 3','Cambrian Series 2','Cambrian 2','Fortunian','Terreneuvian','Cambrian','Paleozoic','Phanerozoic','Ediacaran','Cryogenian','Tonian','Neoproterozoic','Stenian','Ectasian','Calymmian','Mesoproterozoic','Statherian','Orosirian','Rhyacian','Siderian','Paleoproterozoic','Proterozoic','unnamed1','Neoarchean','unnamed2','Mesoarchean','unnamed3','Paleoarchean','unnamed4','Eoarchean','Archean','Hadean','Precambrian','Late Holocene','Early Holocene','Late Pleistocene','Early Pleistocene','Late Pliocene','Early Pliocene','Late Miocene','Early Miocene','Late Cretaceous','Early Cretaceous','Late Jurassic','Early Jurassic','Late Triassic','Early Triassic','Late Pennsylvanian','Early Pennsylvanian','Late Mississippian','Early Mississippian','Late Devonian','Early Devonian','Late Ordovician','Early Ordovician')
+  ##add stratigraphic colors
+  stratifill<-straticol(unique_intervals,defaultcol=na_col) # get standard colors
   
-  if(length(append_cols)>0 && !is.null(names(append_cols))){
-  if(any(names(append_cols)%in%names(stratifill))) stratifill[which(!names(stratifill)%in%names(append_cols))]->stratifill
+  if(length(append_cols)>0 && !is.null(names(append_cols))){  # add custom colors
+  if(any(names(append_cols)%in%names(stratifill))) stratifill[which(!names(stratifill)%in%names(append_cols))]->stratifill #overwrite existing entries in stratifill
   stratifill<-c(stratifill, append_cols) #append additional colors other than standard
   }
   
-  which(!(unique_intervals%in%names(stratifill)))->un_ind
-  
-  if(length(un_ind)>0){rep(na_col,length(un_ind))->append_cols
-  names(append_cols)<-unique_intervals[un_ind]
-  stratifill<-c(stratifill, append_cols) #append default color for intervals without specified fill
-  }
+  #which(!(unique_intervals%in%names(stratifill)))->un_ind
+  #if(length(un_ind)>0){rep(na_col,length(un_ind))->append_cols #add na colors
+  #names(append_cols)<-unique_intervals[un_ind]
+  #stratifill<-c(stratifill, append_cols) #append default color for intervals without specified fill
+  #}
   
   attr(out,"stratifill")<-stratifill
   return(out)
@@ -97,7 +118,6 @@ min(upper[xx],na.rm=TRUE)->y_t[i,j]}
 }
 
 }else{
-
 xx<-which(strat==x[i])
 if(length(xx)>0){
 max(lower[xx],na.rm=TRUE)->y_b[i,1]
@@ -111,7 +131,6 @@ rownames(y)<-x
 
 as.data.frame(y)->y
 }
-
 
 return(y)
 }##
@@ -475,7 +494,7 @@ textvert<-mean(c(maxes[j], mins[j], mins[j], maxes[j]))
 }
 
 if( stratifill && "stratifill"%in%names(attributes(x)) && exists("straticolors") ){
-if(nam[j] %in% names(straticolors)) plot_args2$col<-paleoDiv::add.alpha(straticolors[nam[j]],alpha_fill) else plot_args2$col<-paleoDiv::add.alpha("lightgrey",alpha_fill)
+if(nam[j] %in% names(straticolors)) plot_args2$col<-paleoDiv::add.alpha(straticolors[nam[j]],alpha_fill) else plot_args2$col<-paleoDiv::add.alpha("white",alpha_fill)
 
 do.call(polygon, plot_args2)
 
@@ -487,10 +506,9 @@ paleoDiv::add.alpha(plot_args2$fill,alpha_fill)->plot_args2$fill
 if("col"%in%names(plot_args2)){
 if(length(plot_args2$col)<length(nam)) rep(plot_args2$col,length(nam))[j]->plot_args2$col
 
-paleoDiv::add.alpha(plot_args2$col,alpha_fill)->plot_args2$col
+#paleoDiv::add.alpha(plot_args2$col,alpha_fill)->plot_args2$col
 
 if(v) message(nam[j])
-#alternate colors if vector 
 }
 
 do.call(polygon, plot_args2)
