@@ -206,13 +206,14 @@ tmp[2,x]<-tmp[2,x]+0.5*int_width-tol #bottom
 blocktab[lookup[i,],]<-tmp
 }
 
- #handle a first segment of different length
+#handle a first segment of different length
 int_width<-(blocktab[3,x]-divtab[1,x])*2
 divtab[1,]->tmp
 rbind(tmp,tmp)->tmp
 tmp[1,x]<-tmp[1,x]-0.5*int_width #top
-tmp[2,x]<-tmp[2,x]+0.5*int_width #bottom
+tmp[2,x]<-tmp[2,x]+0.5*int_width-tol #bottom
 blocktab[lookup[1,],]<-tmp
+
 
 if(v) message(int_width0)
 if(v) message(int_width1)
@@ -228,6 +229,7 @@ return(blocktab)
 ##function apply_divDyn
 #' apply the functions from divDyn (e.g. divDyn::divDyn or divDyn::subsample) across all occurrence dataframes in a list() object
 #' @param occ list() object containing occurrence dataframes
+#' @param subset_occ character vector or phylo-class object containing selection of entries in occ to use
 #' @param strat stratigraphic table to use; should be an object of class geotimescale, or a data.frame conforming to the same structure with columns of stratigraphic hierarchy followed by bottom, top and mid for each interval. Alternatively can be a numeric vector of length 2 giving the starting age and bin width to be used to calculate diversity estimates for bins of uniform length without regard for stratigraphic boundaries. If NULL (default) phanerozoic as defined here is used, or c(4600,10) for ten-Ma bins starting at 650.123 Ma.
 #' @param blocky Logical indicating whether rows in the output dataframe should be repeated to produce a "blocky" plotting dataframe using blockdiv(). Default FALSE, returns data.frame with single row per time bin
 #' @param agecols character vector giving col names of lower and upper age for each occurrence (defaults to "lag" and "eag")
@@ -235,6 +237,7 @@ return(blocktab)
 #' @param def_level stratigraphic level to use for binning occurrences, defaults to 4 (for stages in phanerozoic)
 #' @param minbin minimum number of time bins to run function, defaults to 3 (required for divDyn::divDyn)
 #' @param stat statistic to retain from divDyn function, defauls to "divRT" for range-through diversity
+#' @param unify_length logical indicating whether to return rows for all intervals in stat (if TRUE, default) or to crop of bottom stages if no taxon has non-NA return values in them
 #' @param FUN function to apply to each time-binned occurrence table in occ. Defauls to divDyn::divDyn, but can also be divDyn::subsample to perform a subsampling analysis on each dataset. Additional parameters
 #' @param v verbosity setting
 #' @param na value to substitute for NA values
@@ -243,34 +246,48 @@ return(blocktab)
 #' @return a data.frame containing as its first column "x" the mean age of each bin, followed by the bin number, and the diversity estimates based on the chosen parameter as returned by FUN
 #' @export apply_divDyn
 
-apply_divDyn<-function(occ, strat=NULL, blocky=FALSE, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, fill.na="bounding", ...){
+apply_divDyn<-function(occ,subset_occ=NULL, strat=NULL, blocky=FALSE, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, unify_length=TRUE, fill.na="bounding", ...){
 if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
 if(is.null(strat) & !exists("phanerozoic")) strat<-c(4600,-10)
 
 if(is.numeric(strat) && length(strat)>1){ #generate diversity estimates at regular intervals if strat is a numeric vector giving the start time and resolution
 def_level<-1
 strat_tmp<-seq(strat[1],0,-abs(strat[2]))
+if(v) message(strat_tmp[length(strat_tmp)])
+if(strat_tmp[length(strat_tmp)]==0) strat_tmp[-length(strat_tmp)]->strat_tmp
+
 strat<-data.frame(interval=rev(seq_along(strat_tmp)), bottom=strat_tmp)
 strat<-new_geotimescale(strat, bottom_name="bottom", top0=0)
-print(strat)
+if(v) print(strat)
 }
 
+divDyn_bin(occ=NULL, strat, def_level=def_level,agecols=agecols,v=FALSE,return="strat")->strat #add bin numbers to strat
+if(v) print(strat)
+
 if(!is.list(occ) | is.data.frame(occ)){
-print("A")
+if(v) message("coercing occ to list()")
 list(occ=occ)->occ
-print(names(occ))
+if(v) print(names(occ))
 }
 
 names(occ)->Nocc
 logical(length(Nocc))->occ_index
 
-for(i in 1:length(Nocc)){#go over entries in occ, determine if they are occurrence tables
-(is.data.frame(occ[[i]]) | is.matrix(occ[[i]])) && all(c(tax,agecols)%in%colnames(occ[[i]])) -> occ_index[i]
+if(is.null(subset_occ)) Nocc->subset_occ
+if(inherits(subset_occ,"phylo")) subset_occ$tip.label->subset_occ
+
+
+for(i in 1:length(Nocc)){#go over entries in occ, determine if they are occurrence tables and within the desired subset
+
+(is.data.frame(occ[[i]]) | is.matrix(occ[[i]])) && all(c(tax,agecols)%in%colnames(occ[[i]])) && Nocc[i]%in%subset_occ -> occ_index[i]
+if(v) message(i)
+if(v) message(occ_index[i])
+
 if(occ_index[i] && "record_type"%in%colnames(occ[[i]]) && occ[[i]][1,"record_type"]!="occ") occ_index[i]<-FALSE
 }
 if(v) message(Nocc[occ_index])
 
-divDyn_bin(occ=NULL,strat, def_level=def_level,agecols=agecols,v=FALSE,return="strat")->strat #add bin numbers to strat
+##
 
 #build divdyn matrix
 list()->dd
@@ -306,6 +323,7 @@ if(max(dd[[I]]$stg_n,na.rm=TRUE)>lstg) max(dd[[I]]$stg_n,na.rm=TRUE)->lstg
 }else{FALSE->dd[[I]]}
 }
 if(v) message("bins from ", lstg, " to ", ustg)
+if(unify_length) lstg<-max(strat$stg_n)
 
 data.frame(x=NA,stg_n=seq(ustg,lstg,1),xmax=NA,xmin=NA)->dd_
 
@@ -330,6 +348,11 @@ dd_[fillNA,i]<-na
 
 }
 
+if(dd_[1,1]==0){ #make sure to drop first bin if centered on 0
+if(v) message("first bin is centered on 0 and is therefore dropped")
+dd_<-dd_[-1,]
+}
+
 if(blocky) blockdiv(dd_)->dd_
 
 return(dd_)
@@ -339,7 +362,7 @@ return(dd_)
 
 ##plot.geotimescale()
 #' plot method for a geological timescale
-#' @param x a stratigraphic able, either an object of class 'geotimescale', or
+#' @param x a stratigraphic table, either an object of class 'geotimescale', or
 #' @param time.convert optional; function to apply to the ages in x to convert them to plotting space (e.g. in the case of plotting alongside a phylogenetic tree.
 #' @param fromto vector of two numbers giving the left and right (or bottom and top, if horiz==TRUE) margins to plot the timescale to
 #' @param levels levels of hierarchy to plot as column indices in x

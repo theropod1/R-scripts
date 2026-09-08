@@ -1,6 +1,6 @@
-#install.if.missing("geojsonio")
+##install.if.missing("geojsonio")
 #needs apt install protobuf-compiler libprotobuf-dev libjq-dev
-#install.if.missing(c("jsonlite", "sp"))
+##install.if.missing(c("jsonlite", "sp"))
 
 ##replacement for rgdal::readOGR
 readOGR_gplates <- function(url) {
@@ -50,6 +50,25 @@ sp_polygons_to_df <- function(sp_obj) {
 
   do.call(rbind, res)
 }
+
+##
+#'@param what can be "coastlines" or "static_polygons", or any unambiguous substring
+paleomap<-function(ma,what="coastlines",base_url="http://gws.gplates.org/reconstruct/",model="GOLONKA",makemap=FALSE,v=TRUE, simulate=FALSE){
+
+what<-match.arg(what,c("coastlines","static_polygons"))
+url <- paste0(base_url,what,"/?time=",ma,"&model=",model)
+if(v) message(url)
+if(simulate!=TRUE) {
+ol_sp <- readOGR_gplates(url)
+df <- sp_polygons_to_df(ol_sp)
+
+if(makemap==TRUE) makemap(df)->df
+
+return(df)}else{
+message("simulating call to \'",base_url,"\' using model \'", model,"\' and downloading information for \'", what,"\', output as map = ",makemap)
+return(url)
+}
+}##
 
 
 
@@ -111,7 +130,7 @@ ma<-125 #age to visualize
 url <- paste0("http://gws.gplates.org/reconstruct/coastlines/?time=",ma,"&model=GOLONKA")
 url2<-paste0("http://gws.gplates.org/reconstruct/static_polygons/?time=",ma,"&model=GOLONKA")
 
-# read GeoJSON from a URL and return an sp object
+# read GeoJSON from URL and return an sp object
 coast_sp <- readOGR_gplates(url)
 poly_sp <- readOGR_gplates(url2)
 

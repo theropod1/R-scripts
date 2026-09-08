@@ -230,8 +230,8 @@ x[!is.na(x)]
 #' @return a logical indicating whether any elements of x are identical
 #' @export same
 same<-function(x){
-if(length(unique(x))==1) return(TRUE)
-else return(FALSE)
+length(unique(x))==length(x)
+#any(table(x)>1) #alternative
 }
 
 ##between()
@@ -241,6 +241,16 @@ else return(FALSE)
 #' @return a logical indicating whether x lies within the range of between
 #' @export between
 between<-function(x,between) x<=max(between) & x>=min(between)
+
+
+##overlaps()
+#' test if x lies between a set of values
+#' @param x numeric range (is coerced to range if length>2)
+#' @param overlaps numeric range to test overlap with
+#' @return a logical indicating whether x lies within the range of between
+#' @export overlaps
+overlaps<-function(x,overlaps) max(x)>=max(overlaps) & min(x)>=min(overlaps) | any(between(x,overlaps))
+
 
 
 ##overlaps()
@@ -308,7 +318,24 @@ pr <- function(axis = "x") {
                 abs(diff(range(par("usr")[1:2])))}else{
                 abs(diff(range(par("usr")[3:4])))}}
 
+##function alphabetize()
+#' Alphabetic numbering scheme
+#' @param i index or vector of indices to look up in a standard latin alphabet
+#' @param lwrfirst logical whether to start with lowercase letters before appending uppercase letters
+#' @param ... dummy additional arguments
+#' @return letters corresponding to indices in i
+#' @export alphabetize
+#' @examples
+#' alphabetize(c(1,2,3))
 
+alphabetize<-function(i,lwrfirst=TRUE,...){
+	ABC<-"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	tolower(ABC)->abc
+    if(lwrfirst) alph<-c(strsplit(abc,split="")[[1]],strsplit(ABC,split="")[[1]])
+	if(!lwrfirst) alph<-c(strsplit(ABC,split="")[[1]],strsplit(abc,split="")[[1]])
+    
+    return(alph[as.numeric(i)])
+    }
 
 ##function lebbel()
 #' convenience function for adding lettered subplot labels to a plot
