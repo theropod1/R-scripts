@@ -384,6 +384,38 @@ if(blocky) blockdiv(dd_)->dd_
 if(ret%in%c("occurrences","binned_occurrences")) return(occ) else if(ret%in%c("stratigraphy","timescale")) return(strat) else return(dd_) 
 }##
 
+##goodsU() function
+#' @param data data of one taxon whose coverage to estimate for each bin
+#' @param bins name of column in data containing the binning variable, defaults to "stg"
+#' @param taxa column containing the taxon variable, by default "tna","Species" and "identified_name" are all tried
+#' @param ages optional character giving the age of each occurrence, for use in sorting the bins
+#' @return a vector with the Good’s U (coverage indicator) for each bin as defined in data and bins
+goodsU<-function(data, bins="stg",ages=NULL,tax=c("tna","Species","identified_name")){
+
+if(length(tax)>1){#select from multiple entries for taxon column
+which(tax%in%colnames(data))->tax_indices
+if(length(tax_indices)==0) stop("No valid column containing tax variable found, please specify a valid column name as tax parameter!") else{ tax[tax_indices[1]]->tax
+}}
+message("setting tax = ",tax,", bins = ",bins)
+
+coverage<-numeric(length(levels(factor((data[[bins]])))))
+names(coverage)<-levels(factor(data[[bins]]))
+for(i in levels(factor(data[[bins]]))){
+which(data[[bins]]==i)->indices
+tmp2<-data[indices,]
+table(tmp2[[tax]])->sptab
+coverage[i]<-1-(sum(sptab==1)/nrow(tmp2))
+}
+
+if(!is.null(ages)){ #sort by mean age or bin number
+if(is.character(ages)) ages<-data[[ages]]
+tapply(ages,factor(data[[bins]]),mean,na.rm=TRUE)->ages
+coverage[rev(order(ages))]->coverage
+}
+
+return(coverage)
+}
+
 
 
 ##plot.geotimescale()
