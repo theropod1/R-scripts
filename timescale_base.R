@@ -137,14 +137,16 @@ return(y)
 
 
 
-##divDynprep
+##divDyn_bin()
 #' prepare an occurrence dataframe for analysis in divDyn, i.e. time-bin all occurrences based on mean age and assign them to a single numbered stage based on an ordered geotimescale object.
 #' @param occ occurrence dataframe (e.g. from paleoDiv::pdb())
 #' @param strat timescale to use for time-binning, e.g. phanerozoic (see below)
 #' @param v verbosity setting (if TRUE, a list of all stages with their corresponding number is printed)
-#' @return an occurrence dataset with additional columns for mean_ma (mean age), stg (stage) and stg_n (numbered stage)
+#' @ret what to return, can be "occurrences" for an occurrence dataset with additional columns for mean_ma (mean age), stg (stage, not necessarily international chronostratigraphy) and stg_n (numbered stage)
 
-divDyn_bin<-function(occ,strat=NULL,agecols=c("lag","eag"),v=TRUE,def_level=4,return="occ"){
+divDyn_bin<-function(occ=NULL,strat=NULL,agecols=c("lag","eag"),v=TRUE,def_level=4,ret="occurrences"){
+match.arg(ret,c("stratigraphy","timescale","occurrences"))->ret
+
 if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
 
 STG_N<-seq_along(unique(strat[,def_level]))
@@ -157,8 +159,9 @@ timebin(occ$mean_ma,strat,def_level=def_level)->occ$stg
 occ$stg_n<-STG_N[occ$stg]
 
 if(v) print(STG_N)
-if(return=="occ") return(occ) else return(strat)}else{return(strat)}
+if(ret=="occurrences") return(occ) else return(strat)}else{return(strat)}
 }##
+
 
 
 ##function blockdiv()
@@ -240,13 +243,18 @@ return(blocktab)
 #' @param unify_length logical indicating whether to return rows for all intervals in stat (if TRUE, default) or to crop of bottom stages if no taxon has non-NA return values in them
 #' @param FUN function to apply to each time-binned occurrence table in occ. Defauls to divDyn::divDyn, but can also be divDyn::subsample to perform a subsampling analysis on each dataset. Additional parameters
 #' @param v verbosity setting
+#' @param ret character string giving setting for what to return; can be "diversity" (default, returns resulting diversity table), "occurrences" (returns occ with time-binned entries) or "timescale" (returns stratigraphic table used
 #' @param na value to substitute for NA values
 #' @param fill.na method for substituting NA values. if "bounding" (default) only NA values above and below the range of non-NA values are filled, otherwise all values are filled.
+#' @param strict be strict (require data.frame to conform to pdb format with occurrence_type column containing occ
 #' @param ... additional parameters to pass on to FUN
 #' @return a data.frame containing as its first column "x" the mean age of each bin, followed by the bin number, and the diversity estimates based on the chosen parameter as returned by FUN
 #' @export apply_divDyn
 
-apply_divDyn<-function(occ,subset_occ=NULL, strat=NULL, blocky=FALSE, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, unify_length=TRUE, fill.na="bounding", ...){
+apply_divDyn<-function(occ,subset_occ=NULL, strat=NULL, blocky=FALSE, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, unify_length=TRUE, fill.na="bounding",strict=FALSE,ret="diversity", ...){
+match.arg(ret,c("diversity","occurrences","binned_occurrences","timescale","stratigraphy"))->ret #determine what to return
+
+
 if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
 if(is.null(strat) & !exists("phanerozoic")) strat<-c(4600,-10)
 
@@ -261,7 +269,7 @@ strat<-new_geotimescale(strat, bottom_name="bottom", top0=0)
 if(v) print(strat)
 }
 
-divDyn_bin(occ=NULL, strat, def_level=def_level,agecols=agecols,v=FALSE,return="strat")->strat #add bin numbers to strat
+divDyn_bin(occ=NULL, strat, def_level=def_level,agecols=agecols,v=FALSE,ret="strat")->strat #add bin numbers to strat
 if(v) print(strat)
 
 if(!is.list(occ) | is.data.frame(occ)){
@@ -277,18 +285,34 @@ if(is.null(subset_occ)) Nocc->subset_occ
 if(inherits(subset_occ,"phylo")) subset_occ$tip.label->subset_occ
 
 
-for(i in 1:length(Nocc)){#go over entries in occ, determine if they are occurrence tables and within the desired subset
+for(i in 1:length(Nocc)){#go over entries in occ, determine if they are occurrence tables and within the desired subset, save to occ_index
 
 (is.data.frame(occ[[i]]) | is.matrix(occ[[i]])) && all(c(tax,agecols)%in%colnames(occ[[i]])) && Nocc[i]%in%subset_occ -> occ_index[i]
-if(v) message(i)
-if(v) message(occ_index[i])
+if(strict==TRUE && occ_index[i] && "record_type"%in%colnames(occ[[i]]) && occ[[i]][1,"record_type"]!="occ") occ_index[i]<-FALSE
 
-if(occ_index[i] && "record_type"%in%colnames(occ[[i]]) && occ[[i]][1,"record_type"]!="occ") occ_index[i]<-FALSE
+if(v){
+message(i)
+message(Nocc[i])
+message(nrow(occ[[i]])," rows")
+message("is.data.frame: ", is.data.frame(occ[[i]]))
+message("is.matrix: ", is.matrix(occ[[i]]))
+message( paste(c(tax,agecols),collapse=", ")," in colnames: ", all(c(tax,agecols)%in%colnames(occ[[i]])))
+message("in subset: ",Nocc[i]%in%subset_occ)
+message("usable dataframe found? ",occ_index[i])
 }
-if(v) message(Nocc[occ_index])
 
-##
+}
+if(v) message("selected dataframes: ", paste(Nocc[occ_index],collapse=", "))
 
+
+for(i in 1:sum(occ_index)){#time-bin all relevant dataframes
+Nocc[occ_index][i]->I
+occ[[I]]<-divDyn_bin(occ[[I]],strat,def_level=def_level,agecols=agecols,v=FALSE,ret="occ")
+if(ret%in%c("occurrences","binned_occurrences","timescale","stratigraphy")) message(I," stg_n length: ",length(unique(occ[[I]]$stg_n)))
+}
+
+
+if(!(ret%in%c("occurrences","binned_occurrences","timescale","stratigraphy"))){##run these computationally intensive steps only if diversity should actually be returned
 #build divdyn matrix
 list()->dd
 
@@ -296,19 +320,19 @@ list()->dd
 ustg<-1
 lstg<-1
 
-
 for(i in 1:sum(occ_index)){
 Nocc[occ_index][i]->I
-occ[[I]]<-divDyn_bin(occ[[I]],strat,def_level=def_level,agecols=agecols,v=FALSE,return="occ")
-
+#occ[[I]]<-divDyn_bin(occ[[I]],strat,def_level=def_level,agecols=agecols,v=FALSE,ret="occ")
 message(I," stg_n length: ",length(unique(occ[[I]]$stg_n)))
 
 if(length(unique(occ[[I]]$stg_n))>=minbin){
 
 ##apply FUN
-d <-tryCatch({FUN(x=occ[[I]], bin="stg_n", tax=tax, coll="collection_no",...)}, error=function(e){return(paste("error:", e$message))},
+d <-tryCatch({FUN(x=occ[[I]], bin="stg_n", tax=tax,...)}, error=function(e){return(paste("error:", e$message))},
 warning=function(w){return(paste("warning:", w$message))
-})
+}) #, coll="collection_no"
+
+if(v | !is.data.frame(d) && !is.matrix(d) && is.character(d) ) print(d)
 
 #extract data if successful
 if(is.data.frame(d) | is.matrix(d)){
@@ -322,12 +346,13 @@ if(max(dd[[I]]$stg_n,na.rm=TRUE)>lstg) max(dd[[I]]$stg_n,na.rm=TRUE)->lstg
 }else{FALSE->dd[[I]]}
 }else{FALSE->dd[[I]]}
 }
+if(unify_length){lstg<-max(strat$stg_n)
+ustg<-min(strat$stg_n)
+}
 if(v) message("bins from ", lstg, " to ", ustg)
-if(unify_length) lstg<-max(strat$stg_n)
 
 data.frame(x=NA,stg_n=seq(ustg,lstg,1),xmax=NA,xmin=NA)->dd_
-
-for(i in dd_$stg_n){
+for(i in dd_$stg_n){##concatenate list contents in dd into data.frame dd_
 which(strat$stg_n==i)->strat_index
 mean(c(max(strat$bottom[strat_index],na.rm=TRUE),min(strat$top[strat_index],na.rm=TRUE)))->dd_$x[dd_$stg_n==i]
 max(strat$bottom[strat_index],na.rm=TRUE)->dd_$xmax[dd_$stg_n==i]
@@ -354,8 +379,9 @@ dd_<-dd_[-1,]
 }
 
 if(blocky) blockdiv(dd_)->dd_
+}
 
-return(dd_)
+if(ret%in%c("occurrences","binned_occurrences")) return(occ) else if(ret%in%c("stratigraphy","timescale")) return(strat) else return(dd_) 
 }##
 
 

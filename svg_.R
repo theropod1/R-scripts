@@ -2,7 +2,7 @@ svg_<-function(script=NULL, width=12, height=9, ptsize=18, fname=NULL, bg = "tra
 
 c(width,height,ptsize)->dimres
 
-if(is.null(fname)) fname<-"svgexport"
+if(is.null(fname)){fname<-"svgexport"
 nf<-1
 fname1<-paste0(fname,"_",leading0(nf,mx=4),".svg")
 
@@ -10,6 +10,7 @@ while(file.exists(fname1)){
 fname1<-paste0(fname,"_",leading0(nf,mx=4),".svg")
 nf<-nf+1
 }
+}else{fname->fname1}
 message("exporting to ", fname1, " with ", paste0(dimres,collapse=", "))
 
 svg(file=fname1, width=dimres[1], height=dimres[2], pointsize=dimres[3], bg=bg,...)
@@ -34,14 +35,14 @@ pdf_<-function(script=NULL, width=12, height=9, ptsize=18, fname=NULL, bg = "tra
 
 c(width,height,ptsize)->dimres
 
-if(is.null(fname)) fname<-"svgexport"
+if(is.null(fname)){fname<-"pdfexport"
 nf<-1
 fname1<-paste0(fname,"_",leading0(nf,mx=4),".pdf")
 
 while(file.exists(fname1)){
 fname1<-paste0(fname,"_",leading0(nf,mx=4),".pdf")
 nf<-nf+1
-}
+}}else{fname->fname1}
 message("exporting to ", fname1, " with ", paste0(dimres,collapse=", "))
 
 pdf(file=fname1, width=dimres[1], height=dimres[2], pointsize=dimres[3], bg=bg,...)

@@ -36,6 +36,8 @@
 #' pie_(c(1,3,5), total=10, col=c("red","blue","green"), labels=c("A","B","C"))
 #' pie_(c(1,3,5), total=10, col=c("red","blue","green"), labels=c("A","B","C"), width=0.3)
 
+##TODO: add center-coord option and second function for floating pies from matrix
+
 pie_<-function (x, total=NULL, othercol="grey", labels = names(x), edges = 200, radius = 1, inner_radius=NULL, clockwise = FALSE, init.angle = if (clockwise) 90 else 0, density = NULL, angle = 45, col = NULL, border = NULL, lty = NULL, main = NULL, col.lab=col, italicize=NULL, cex=1, width=radius, cross=FALSE,...){
 
 if(inherits(col,"function")) col(length(x))->col
@@ -202,8 +204,8 @@ paleoDiv::divdistr_int(x=interval,table=selection)->n[i]
 
 names(n)<-taxsel
 
-if(ua_substr(type, c("piechart","barplot"), match="piechart") | type=="p") pie_(n, labels=labels,...)
-if(ua_substr(type, c("piechart","barplot"), match="barplot") | type=="b") barplot(n, names.arg=labels,...)->p
+if( match.arg(type, c("piechart","barplot")) == "piechart" ) pie_(n, labels=labels,...)
+if( match.arg(type, c("piechart","barplot")) == "barplot" ) barplot(n, names.arg=labels,...)->p
 
 invisible(n)
 
