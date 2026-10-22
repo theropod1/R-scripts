@@ -163,71 +163,48 @@ if(ret=="occurrences") return(occ) else return(strat)}else{return(strat)}
 }##
 
 
+##goodsU() function
+#' @param data data of one taxon whose coverage to estimate for each bin
+#' @param bins name of column in data containing the binning variable, defaults to trying c("stg","stg_n","stage","bin") in that order
+#' @param allbins vector containing all possible bins, useful for alignment for multiple taxa
+#' @param taxa column containing the taxon variable, by default "tna","Species" and "identified_name" are all tried
+#' @param ages optional character giving the age of each occurrence, for use in sorting the bins
+#' @return a vector with the Good’s U (coverage indicator) for each bin as defined in data and bins
+goodsU<-function(data, bins=c("stg","stg_n","stage","bin"), allbins=NULL, ages=NULL, tax=c("tna","Species","identified_name")){
 
-##function blockdiv()
-#' convert a data.frame containing diversity estimates by mean age to a data.frame containing two rows for each bin, one at the lower and one at the upper boundary, for purposes of plotting
-#' @param divtab diversity table as output by apply_divDyn, should contain x (mean age) and optionally xmax and xmin values for each diversity estimate. If xmin and xmax values cannot be found, an attempt is made to determine the regular interval at which x is spaced.
-#' @param x name of the column containing the ages
-#' @param xmax name of the column containing the maximum ages of each bin
-#' @param xmin name of the column containing the minimum ages of each bin
-#' @param tol Tolerance value to subtract from the age of the lower boundary of each bin to make ages continuous and make sure bins remain ordered correctly if ordered by another function
-#' @param v verbosity setting
-#' @return a data.frame with each row in divtap repeated and respective bottom and top ages substituted for x
-#' @export blockdiv
+if(length(tax)>1){#select from multiple entries for taxon column
+which(tax%in%colnames(data))->tax_indices
+if(length(tax_indices)==0) stop("No valid column containing tax variable found, please specify a valid column name as tax parameter!") else{ tax[tax_indices[1]]->tax
+}}
 
-blockdiv<-function(divtab, x="x", xmax="xmax", xmin="xmin", tol=1E-6, v=FALSE){
+if(length(bins)>1){#select from multiple entries for binning column
+which(bins%in%colnames(data))->bins_indices
+if(length(bins_indices)==0) stop("No valid column containing binning variable found, please specify a valid column name as bins parameter!") else{ bins[bins_indices[1]]->bins
+}}
 
-int_width0<-divtab[3,x]-divtab[2,x]
-int_width1<-divtab[2,x]-divtab[1,x]
+message("setting tax = ",tax,", bins = ",bins)
 
-if(int_width0<0){ #order ascending age
-divtab[order(divtab[,x]),]->divtab
+if(is.null(allbins)) allbins<-levels(factor(data[[bins]]))
+
+coverage<-numeric(length(allbins))
+names(coverage)<-allbins
+
+for(i in allbins){
+
+which(data[[bins]]==i)->indices
+if(length(indices>0)){tmp2<-data[indices,]
+table(tmp2[[tax]])->sptab
+coverage[i]<-1-(sum(sptab==1)/nrow(tmp2))}else{coverage[i]<-0}
 }
 
-blocktab<-rbind(divtab,divtab)
-lookup<-matrix(c(1:nrow(blocktab)),byrow=TRUE,ncol=2)
-
-if(xmax%in%colnames(divtab) & xmin%in%colnames(divtab)){ #if there are bottom and top ages
-
-for(i in 1:nrow(divtab)){
-int_width<-divtab[(i+1),x]-divtab[i,x]
-divtab[i,]->tmp
-rbind(tmp,tmp)->tmp
-tmp[1,x]<-tmp[1,xmin]#top
-tmp[2,x]<-tmp[2,xmax]-tol#bottom
-blocktab[lookup[i,],]<-tmp
+if(!is.null(ages)){ #sort by mean age or bin number
+if(is.character(ages)) ages<-data[[ages]]
+tapply(ages,factor(data[[bins]]),mean,na.rm=TRUE)->ages
+coverage[rev(order(ages))]->coverage
 }
 
-}else{#no bottom and top ages given for intervals, work with intervals of unit length
-
-for(i in 1:nrow(divtab)){
-int_width<-divtab[(i+1),x]-divtab[i,x]
-divtab[i,]->tmp
-rbind(tmp,tmp)->tmp
-tmp[1,x]<-tmp[1,x]-0.5*int_width #top
-tmp[2,x]<-tmp[2,x]+0.5*int_width-tol #bottom
-blocktab[lookup[i,],]<-tmp
-}
-
-#handle a first segment of different length
-int_width<-(blocktab[3,x]-divtab[1,x])*2
-divtab[1,]->tmp
-rbind(tmp,tmp)->tmp
-tmp[1,x]<-tmp[1,x]-0.5*int_width #top
-tmp[2,x]<-tmp[2,x]+0.5*int_width-tol #bottom
-blocktab[lookup[1,],]<-tmp
-
-
-if(v) message(int_width0)
-if(v) message(int_width1)
-
-}
-if(v) print(lookup)
-
-return(blocktab)
+return(coverage)
 }##
-
-
 
 ##function apply_divDyn
 #' apply the functions from divDyn (e.g. divDyn::divDyn or divDyn::subsample) across all occurrence dataframes in a list() object
@@ -243,6 +220,7 @@ return(blocktab)
 #' @param unify_length logical indicating whether to return rows for all intervals in stat (if TRUE, default) or to crop of bottom stages if no taxon has non-NA return values in them
 #' @param FUN function to apply to each time-binned occurrence table in occ. Defauls to divDyn::divDyn, but can also be divDyn::subsample to perform a subsampling analysis on each dataset. Additional parameters
 #' @param v verbosity setting
+#' @param drop.insufficient Relevant when using shareholder quorum subsampling; Logical indicating whether to calculate good’s U as an indicator of coverage for each taxon and bin and set all entries in the results where U is lower than the chosen quorum (q parameter in ...) to NA
 #' @param ret character string giving setting for what to return; can be "diversity" (default, returns resulting diversity table), "occurrences" (returns occ with time-binned entries) or "timescale" (returns stratigraphic table used
 #' @param na value to substitute for NA values
 #' @param fill.na method for substituting NA values. if "bounding" (default) only NA values above and below the range of non-NA values are filled, otherwise all values are filled.
@@ -251,9 +229,10 @@ return(blocktab)
 #' @return a data.frame containing as its first column "x" the mean age of each bin, followed by the bin number, and the diversity estimates based on the chosen parameter as returned by FUN
 #' @export apply_divDyn
 
-apply_divDyn<-function(occ,subset_occ=NULL, strat=NULL, blocky=FALSE, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, unify_length=TRUE, fill.na="bounding",strict=FALSE,ret="diversity", ...){
-match.arg(ret,c("diversity","occurrences","binned_occurrences","timescale","stratigraphy"))->ret #determine what to return
+apply_divDyn<-function(occ,subset_occ=NULL, strat=NULL, blocky=FALSE, agecols=c("lag","eag"), tax="tna", def_level=4, minbin=3, stat="divRT", FUN=divDyn::divDyn, v=FALSE, na=NA, unify_length=TRUE, fill.na="bounding",strict=FALSE,ret="diversity", drop.insufficient=FALSE, ...){
 
+match.arg(ret,c("diversity","occurrences","binned_occurrences","timescale","stratigraphy","coverage"))->ret #determine what to return
+list(...)->FUN.args
 
 if(is.null(strat) & exists("phanerozoic")) strat<-phanerozoic
 if(is.null(strat) & !exists("phanerozoic")) strat<-c(4600,-10)
@@ -332,12 +311,40 @@ d <-tryCatch({FUN(x=occ[[I]], bin="stg_n", tax=tax,...)}, error=function(e){retu
 warning=function(w){return(paste("warning:", w$message))
 }) #, coll="collection_no"
 
-if(v | !is.data.frame(d) && !is.matrix(d) && is.character(d) ) print(d)
+if(drop.insufficient==TRUE){ U <-tryCatch({goodsU(occ[[I]],bins="stg_n",allbins=strat$stg_n)}, error=function(e){return(paste("error:", e$message))},
+warning=function(w){return(paste("warning:", w$message))
+})
+
+if("q" %in%names(FUN.args) & is.numeric(U)){
+U<FUN.args$q->Usmallerq
+}else{drop.insufficient<-FALSE
+warning("comparison of goods U and quorum failed, proceeding without post hoc check of coverage")}
+
+}
+
+#if(v | !is.data.frame(d) && !is.matrix(d) && is.character(d) ) print(d)
 
 #extract data if successful
 if(is.data.frame(d) | is.matrix(d)){
 if(v) message(nrow(d))
 dd[[I]]<-d[,c("stg_n",stat)]
+
+if(drop.insufficient && exists("U") && is.numeric(U)) U<-U[dd[[I]]$stg_n] ##drop values with insufficient coverage to NA, if desired
+
+if(ret=="coverage") dd[[I]][,stat]<-U
+
+#if(drop.insufficient && exists("Usmallerq") && is.logical(Usmallerq)) dd[[I]][intersect(which(Usmallerq),which(!is.na(dd[[I]][[stat]]))),stat]<-NA 
+if(drop.insufficient && exists("U") && is.numeric(U)) dd[[I]][U<FUN.args$q,stat]<-NA ##drop values with insufficient coverage to NA, if desired
+
+if(v){#status message about coverage
+message("coverage for ",I)
+print(U)
+if("q" %in%names(FUN.args) & is.numeric(U)){ message("below q? (", FUN.args$q,")")
+print(Usmallerq)
+message("bins ", paste(which(Usmallerq),collapse=","), " did not meet quorum and will be set to NA")
+}
+}
+
 rownames(dd[[I]])<-dd[[I]]$stg_n
 
 if(min(dd[[I]]$stg_n,na.rm=TRUE)<ustg) min(dd[[I]]$stg_n,na.rm=TRUE)->ustg
@@ -384,37 +391,71 @@ if(blocky) blockdiv(dd_)->dd_
 if(ret%in%c("occurrences","binned_occurrences")) return(occ) else if(ret%in%c("stratigraphy","timescale")) return(strat) else return(dd_) 
 }##
 
-##goodsU() function
-#' @param data data of one taxon whose coverage to estimate for each bin
-#' @param bins name of column in data containing the binning variable, defaults to "stg"
-#' @param taxa column containing the taxon variable, by default "tna","Species" and "identified_name" are all tried
-#' @param ages optional character giving the age of each occurrence, for use in sorting the bins
-#' @return a vector with the Good’s U (coverage indicator) for each bin as defined in data and bins
-goodsU<-function(data, bins="stg",ages=NULL,tax=c("tna","Species","identified_name")){
 
-if(length(tax)>1){#select from multiple entries for taxon column
-which(tax%in%colnames(data))->tax_indices
-if(length(tax_indices)==0) stop("No valid column containing tax variable found, please specify a valid column name as tax parameter!") else{ tax[tax_indices[1]]->tax
-}}
-message("setting tax = ",tax,", bins = ",bins)
 
-coverage<-numeric(length(levels(factor((data[[bins]])))))
-names(coverage)<-levels(factor(data[[bins]]))
-for(i in levels(factor(data[[bins]]))){
-which(data[[bins]]==i)->indices
-tmp2<-data[indices,]
-table(tmp2[[tax]])->sptab
-coverage[i]<-1-(sum(sptab==1)/nrow(tmp2))
+##function blockdiv()
+#' convert a data.frame containing diversity estimates by mean age to a data.frame containing two rows for each bin, one at the lower and one at the upper boundary, for purposes of plotting
+#' @param divtab diversity table as output by apply_divDyn, should contain x (mean age) and optionally xmax and xmin values for each diversity estimate. If xmin and xmax values cannot be found, an attempt is made to determine the regular interval at which x is spaced.
+#' @param x name of the column containing the ages
+#' @param xmax name of the column containing the maximum ages of each bin
+#' @param xmin name of the column containing the minimum ages of each bin
+#' @param tol Tolerance value to subtract from the age of the lower boundary of each bin to make ages continuous and make sure bins remain ordered correctly if ordered by another function
+#' @param v verbosity setting
+#' @return a data.frame with each row in divtap repeated and respective bottom and top ages substituted for x
+#' @export blockdiv
+
+blockdiv<-function(divtab, x="x", xmax="xmax", xmin="xmin", tol=1E-6, v=FALSE){
+
+int_width0<-divtab[3,x]-divtab[2,x]
+int_width1<-divtab[2,x]-divtab[1,x]
+
+if(int_width0<0){ #order ascending age
+divtab[order(divtab[,x]),]->divtab
 }
 
-if(!is.null(ages)){ #sort by mean age or bin number
-if(is.character(ages)) ages<-data[[ages]]
-tapply(ages,factor(data[[bins]]),mean,na.rm=TRUE)->ages
-coverage[rev(order(ages))]->coverage
+blocktab<-rbind(divtab,divtab)
+lookup<-matrix(c(1:nrow(blocktab)),byrow=TRUE,ncol=2)
+
+if(xmax%in%colnames(divtab) & xmin%in%colnames(divtab)){ #if there are bottom and top ages
+
+for(i in 1:nrow(divtab)){
+int_width<-divtab[(i+1),x]-divtab[i,x]
+divtab[i,]->tmp
+rbind(tmp,tmp)->tmp
+tmp[1,x]<-tmp[1,xmin]#top
+tmp[2,x]<-tmp[2,xmax]-tol#bottom
+blocktab[lookup[i,],]<-tmp
 }
 
-return(coverage)
+}else{#no bottom and top ages given for intervals, work with intervals of unit length
+
+for(i in 1:nrow(divtab)){
+int_width<-divtab[(i+1),x]-divtab[i,x]
+divtab[i,]->tmp
+rbind(tmp,tmp)->tmp
+tmp[1,x]<-tmp[1,x]-0.5*int_width #top
+tmp[2,x]<-tmp[2,x]+0.5*int_width-tol #bottom
+blocktab[lookup[i,],]<-tmp
 }
+
+#handle a first segment of different length
+int_width<-(blocktab[3,x]-divtab[1,x])*2
+divtab[1,]->tmp
+rbind(tmp,tmp)->tmp
+tmp[1,x]<-tmp[1,x]-0.5*int_width #top
+tmp[2,x]<-tmp[2,x]+0.5*int_width-tol #bottom
+blocktab[lookup[1,],]<-tmp
+
+
+if(v) message(int_width0)
+if(v) message(int_width1)
+
+}
+if(v) print(lookup)
+
+return(blocktab)
+}##
+
 
 
 
@@ -434,16 +475,28 @@ return(coverage)
 #' @param stratifill logical; use stratifill attribute to automatically generate fill colors (default=TRUE)
 #' @param label_top logical; plot labels after all polygons are plotted to keep them on top at all times? (default=FALSE)
 #' @param alpha_fill alpha channel value to be applied to fill colors
+#' @param block_IDs Should repeated, disjunct occurrences of blocks of identical factor levels be treated and plotted as separate intervals?
 #' @param ... additional parameters to pass on to plot and polygon
 #' @return nothing, but adds the plotted time scale to the current plotting device
 #' @export plot.geotimescale
 #' @method plot.geotimescale
 #' @importFrom paleoDiv add.alpha
 #' @examples
-plot.geotimescale<-function(x, time.convert=identity, fromto=NULL, levels=c(1:4), horiz=FALSE, v=FALSE, rotate=NULL, widths=NULL, width_adjust=3, text_range=range(x$bottom), add=NULL, stratifill=TRUE, label_top=FALSE,alpha_fill=1,...){
+plot.geotimescale<-function(x, time.convert=identity, fromto=NULL, levels=c(1:4), horiz=FALSE, v=FALSE, rotate=NULL, widths=NULL, width_adjust=3, text_range=range(x$bottom), add=NULL, stratifill=TRUE, label_top=FALSE,alpha_fill=1,block_IDs=FALSE,...){
 list(...)->plot_args
 
 between<-function(x,between) x<=max(between) & x>=min(between)
+
+blockid<-function(x){
+numeric(length(x))->xid
+xidi<-1
+xid[1]<-xidi
+for(i in 2:length(x)){
+if(x[i]!=x[(i-1)]) xidi+1->xidi
+xid[i]<-xidi
+}
+xid
+}
 
 if(!inherits(x,"geotimescale")) new_geotimescale(x)->x
 attr(x,"stratifill")->straticolors
@@ -551,12 +604,24 @@ which(levels==i)->i_
 sum(widths[1:i_])+fromto[1]->lmar
 if(i_>1) sum(widths[1:(i_-1)])+fromto[1]->umar else fromto[1]->umar
 
+
+if(block_IDs){ #if disjunct intervals should be allowed, create unique IDs for blocks
+blockid(x[,i])->x_blockids_i
+
+tapply(c(x$top,x$bottom),factor(rep(x_blockids_i,2)),FUN=max)->maxes
+tapply(c(x$top,x$bottom),factor(rep(x_blockids_i,2)),FUN=min)->mins
+}else{
 tapply(c(x$top,x$bottom),factor(rep(x[,i],2)),FUN=max)->maxes
 tapply(c(x$top,x$bottom),factor(rep(x[,i],2)),FUN=min)->mins
+}
 mins[order(maxes)]->mins
 maxes[order(maxes)]->maxes
 
 names(maxes)->nam
+
+if(block_IDs){ #if disjunct intervals should be allowed, look up proper names based on block ids
+for(p in 1:length(nam)) nam[p] <- c(x[x_blockids_i==nam[p],i])[1]
+}
 
 for(j in 1:length(nam)){ #loop through each stratigraphic unit in given level of hierarchy
 

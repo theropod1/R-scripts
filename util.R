@@ -520,7 +520,28 @@ lines(y=y[c(1,1,2,2)],x=c(x+adjust*plex,x,x,x+adjust*plex),...)
 
 if(!is.null(labels)) do.call("text",txt)
 
+}##
+
+
+
+##function blockid()
+#' create a vector of unique ids for consecutive blocks of factor levels in a vector
+#' @param x a vector for which to generate unique block ids
+#' @details This function takes a vector (in the intended order) as input and then generates a unique ID for different blocks of successive occurrences of each factor level. e.g. if x is c(1,1,2,2,1,1,3,3) the returned values will be c(1,1,2,2,3,3,4,4), because the first and second block of 1s will be treated as separate blocks that get separate IDs
+#' @return A vector of unique block id numbers in x
+#' @export blockid
+
+blockid<-function(x){
+numeric(length(x))->xid
+xidi<-1
+xid[1]<-xidi
+for(i in 2:length(x)){
+if(x[i]!=x[(i-1)]) xidi+1->xidi
+xid[i]<-xidi
 }
+
+xid
+}##
 
 
 
