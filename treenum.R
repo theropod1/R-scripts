@@ -13,6 +13,8 @@
 #' phylo2nwk(t)
 
 phylo2nwk <- function(tree) {
+
+phylo2nwk_ <- function(tree) {
   # Ensure correct class
   if (!inherits(tree, "phylo")) {
     stop("Input must be a phylo object.")
@@ -57,6 +59,22 @@ phylo2nwk <- function(tree) {
   root <- setdiff(tree$edge[,1], tree$edge[,2])[1]
   
   paste0(build_subtree(root), ";")
+} #end internal function definition
+
+if(inherits(tree,"phylo")) phylo2nwk_(tree) else if (inherits(tree,"multiPhylo")) { 
+
+out_multi<-character()
+for(i in 1:length(tree)){
+paste0(out_multi,phylo2nwk_(tree[[i]]),"\n")->out_multi
+}
+
+return(out_multi)
+
+} else{stop("tree must be phylo or multiPhylo class")}
+
+
+
+
 }##
 
 
@@ -75,13 +93,10 @@ phylo2nwk <- function(tree) {
 
 tnt2nwk<-function(treestring,return.phylo=TRUE,sep.chars=NULL, replacewith=NULL,v=FALSE,...){
 
-
 if( is.character(treestring) && file.exists(treestring) ){ readChar(treestring,nchars=file.info(treestring)$size)->treestring
 #readLines(treestring)->treestring #would read lines with individual trees separately
 if(v) print(treestring)
 }
-
-
 
 #check for balanced parentheses:
 treestring_chars <- strsplit(treestring, "")[[1]]
@@ -92,7 +107,10 @@ if(sum(treestring_chars == "(") < sum(treestring_chars == ")")) warning(paste("t
 if(return.phylo) warning("no valid parenthetical format, conversion to phylo class not possible")
 }
 
-grepl(",", treestring)->is.newick #is the origin a newick string?
+grepl(",", treestring)->is.newick ##is the origin a newick string?
+
+treestring<-gsub("\r","\n",treestring)
+
 
 ## detect and convert
 if( is.newick ){ ##newick to tnt
@@ -105,6 +123,7 @@ return.phylo<-FALSE
 }
 
 out<-treestring
+
 for(i in sep.chars) out<-gsub(i,replacewith,out,...)
 out<-gsub("\\)\\(","\\) \\(",out)
 
@@ -117,12 +136,17 @@ for(i in sep.chars) out<-gsub(i,replacewith,out,...)
 out<-gsub("\\)\\(","\\),\\(",out)
 
 out<-gsub("\\*\n",";\n",out)
+out<-gsub("\\*\r\n",";\r\n",out)
+
+out<-gsub("proc-;","",out)
 
 }
 
 #status messages
 if(v) print(replacewith)
 if(v) print(sep.chars)
+if(v) message("para_balanced = ",para_balanced)
+if(v) message("return.phylo = ",return.phylo)
 
 ##clean up doubles
 while(grepl(",,",out)) out<-gsub(",,",",",out)
@@ -139,12 +163,15 @@ return(out)
 #' @param treestring single character string containing tree or filename from which to read tree in which to perform replacements
 #' @param charmatr character matrix as matrix or file name
 #' @param return.phylo Logical indicating whether to return phylogeny or parenthetical string
+#' @param force.newick Logical indicating whether to force character-output to conform to newick format, otherwise it is returned in original format
+
 #' @param v verbosity setting
+#' @param outfile output file to write converted trees to
 #' @return Tree with replacements based on order of taxa in tnt character matrix
 #' @export treenum
 #' @importFrom TreeTools ReadTntCharacters
 #' @importFrom ape read.tree
-treenum<-function(treestring, charmatr, return.phylo=FALSE, v=TRUE,...){
+treenum<-function(treestring, charmatr, return.phylo=FALSE, force.newick=TRUE, v=TRUE, outfile=NULL,...){
 
 is_numeric_like<-function(x){
 as.numeric(x)->x_
@@ -172,39 +199,52 @@ names(taxnum)<-taxnam
 names(taxnam)<-taxnum
 
 ##see what kind of tree we have
-if(inherits(treestring,"phylo")){
+if(inherits(treestring,"phylo") | inherits(treestring,"multiPhylo")){
 treestring->tree0
 original_is_newick<-FALSE
 }else{
 gsub("\n","",treestring)->treestring
-if(v) print(treestring)
+#if(v) print(treestring)
 
 if(grepl(",",treestring) & grepl(";",treestring)) original_is_newick<-TRUE else original_is_newick<-FALSE #test if valid newick string seems to be present
-if(v) message("original is newick: ",original_is_newick)
 
 if(original_is_newick) tree0 <- ape::read.tree(text=treestring) else tree0 <- tnt2nwk(treestring,return.phylo=TRUE)
-    
-    if(v) print(tree0)
-	if(v) message("original_is_newick? = ",original_is_newick)
+
 }
-   
-   
-   ##if(multiphylo) for i in 1:length tree0)
-   
-##perform replacements
-    
+
+#diagnostics
+if(v & original_is_newick) message("original is newick, using ape::read.tree()") else if(v) message("original is not newick, using tnt2nwk converter")
+if(v) message("class of original is ", class(treestring), " and class of read tree is ", class(tree0), " with length ", length(tree0))
+if(!inherits(tree0,"phylo") & !inherits(tree0,"multiPhylo")) warning("read tree(s) not in correct phylo or multiPhylo class")
+
+
+##apply algorithm to convert tree tip labels
+if(inherits(tree0, "phylo")){ #single phylo
+
 if(all(is_numeric_like(tree0$tip.label))){
 freplace(tree0$tip.label,taxnum,taxnam)->tree0$tip.label
-if(v) message("converting numbered phylogeny to named phylogeny")}else{
+if(v) message("all tip.labels are numeric, converting numbered phylogeny to named phylogeny")}else{
 freplace(tree0$tip.label,taxnam,taxnum)->tree0$tip.label
 if(v) message("converting named phylogeny to numbered phylogeny")
 }
 
-phylo2nwk(tree0)->tree_nwk
-if(!original_is_newick) tnt2nwk(tree_nwk,return.phylo=FALSE)->tree1 else tree_nwk->tree1
+}else if(inherits(tree0, "multiPhylo")) for(i in 1:length(tree0)){ #multiPhylo
+
+if(all(is_numeric_like(tree0[[i]]$tip.label))){
+freplace(tree0[[i]]$tip.label,taxnum,taxnam)->tree0[[i]]$tip.label
+if(v) message("all tip.labels are numeric, converting numbered phylogeny to named phylogeny")}else{
+freplace(tree0[[i]]$tip.label,taxnam,taxnum)->tree0[[i]]$tip.label
+if(v) message("converting named phylogeny to numbered phylogeny")
+}
+}
+
+phylo2nwk(tree0)->tree_nwk ##
+
+if(!original_is_newick & !force.newick) tnt2nwk(tree_nwk,return.phylo=FALSE)->tree1 else tree_nwk->tree1
+
+if(!is.null(outfile) && is.character(outfile)) write(tree1, file=outfile[1])
 
 if(!return.phylo){return(tree1)}else return(tree0)
-
 }##
 
 ####TntLabels()
