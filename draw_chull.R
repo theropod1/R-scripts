@@ -171,6 +171,7 @@ if(!is.logical(order)){
 
 if(is.character(order)){
 whichorderin(order,as.character(lev))->or
+#match(order,as.character(lev))->or
 }else{order->or
 }
 c(or,which(!(1:length(lev))%in%or))->or

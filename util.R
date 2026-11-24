@@ -28,7 +28,7 @@ return(x)
 #' search for multiple values and return logical vector for presence or absence of the different entries in pattern
 #' @param matches vector of search patterns
 #' @param vector vector in which to search
-#' @return logical vector with same length as matches giving whether or not element is present in vector
+#' @return logical with same length as matches giving whether or not element is present in vector
 #' @export multilgrep
 multilgrep<-function(matches, vector){
 out<-logical(length(matches))
@@ -44,7 +44,7 @@ return(out)
 #' return logical vector giving presence of matches in vector
 #' @param matches vector of search patterns
 #' @param vector vector in which to search
-#' @return indices of entried in vector that match one or more patterns in matches
+#' @return logical of same length as vector giving presence (TRUE) or absence (FALSE) of at least 1 pattern(s) in matches
 #' @export multilgrep
 multigrepl<-function(matches, vector){
 out<-logical(length(vector))
@@ -392,14 +392,15 @@ o_temp<<-o_temp
 #' @param ordered vector for whose elements to determine order
 #' @param unordered vector in which to look for elements of ordered
 #' @param multiple logical, allow multiple occurrences of each element of ordered (slower)
-#' @param na.rm logical, remove nas for elements that were not found from output
+#' @param na.rm logical, remove NAs for elements that were not found from output
 #' @return indices at which each element in ordered is found in unordered (can be used to bring unordered into identical order)
 #' @export whichorderin
 
 
 whichorderin<-function(ordered,unordered,multiple=FALSE,na.rm=TRUE){#function to copy the order of an identifier
-if(multiple){#multiple occurrences in unordered possible for each elemen of ordered (slower)
+if(multiple){#multiple occurrences in unordered possible for each element of ordered (slower)
 out<-numeric()
+
 for(i in 1:length(ordered)){
 which(unordered==ordered[i])->i_
 out<-c(out,i_)
@@ -407,12 +408,15 @@ out<-c(out,i_)
 
 }else{#if only the first of each element should be returned
 out<-numeric(length(ordered))
+
 for(i in 1:length(ordered)){
 which(unordered==ordered[i])->i_
+
 if(length(i_)>0) i_[1]->out[i]
 }
 }
 if(na.rm) out<-out[!is.na(out)] #remove NAs
+
 return(out)#indices of each element of ordered in unordered
 }##
 
@@ -545,3 +549,88 @@ xid
 
 
 
+##function compile_attr()
+#' create a vector of unique ids for consecutive blocks of factor levels in a vector
+#' @param x a list() object for which to compile attributes
+#' @param attr_name attribute name to pass on to attr()
+#' @param simplify Logical whether to simplify output from list() to a vector or data.frame()
+#' @return compiled values of chosen attribute for all elements of x
+#' @export compile_attr
+
+compile_attr<-function(x,attr_name,simplify=TRUE,...){
+list()->out
+names(x)->xnames
+lengths<-numeric(length(x))
+
+for(i in 1:length(x)){
+attr(x[[i]],attr_name)->attr_i
+if(!is.null(attr_i)) out[[xnames[i]]]<-attr_i else out[[xnames[i]]]<-NA
+
+lengths[i]<-length(out[[xnames[i]]])
+}
+
+if(simplify==TRUE){
+if(all(lengths==1)){
+unlist(out)->out
+names(out)<-xnames
+}else if(length(unique(lengths))==1){
+out_<-out
+out<-out_[[1]]
+for(i in 2:length(out_)) out<-cbind(out,out_[[i]])
+data.frame(out)->out
+colnames(out)<-xnames
+}
+}
+
+return(out)
+}##
+
+##gcd()
+#' find the greatest common divisor of any numbers
+#' @param ... at least two integers
+#' @return the greatest common divisor of the integers
+#' @export gcd
+
+gcd <- function(...) {
+list(...)->a
+sort(unlist(a))->a
+
+  gcd2 <- function(a, b) {
+    while (b != 0) {
+      tmp <- b
+      b <- a %% b
+      a <- tmp
+    }
+    a
+  }
+
+  Reduce(gcd2, a)
+}
+
+
+#' subdivide string after a specified number of words, if possible
+#' @param x character vector
+#' @param after single numeric giving position after which to separate
+#' @param sep word separator character string
+#' @param ... additional parameters for strsplit()
+#' @return a data.frame() containing the parts of the string before and after the split for each entry in x
+#' @export sepafter
+sepafter<-function(x, after=1, sep=" ",...){
+a1<-after+1
+strsplit(x=x, split=sep, ...)->x
+
+character(length(x))->out_before->out_after
+for(i in 1:length(x)){
+x[[i]]->xi
+lxi<-length(xi)
+
+if(after<lxi){ 
+paste(xi[1:after],collapse=sep)->out_before[i]
+paste(xi[a1:lxi],collapse=sep)->out_after[i]
+}else{
+NA->out_before[i]
+NA->out_after[i]
+}
+}
+return(data.frame(before=out_before,after=out_after))
+}

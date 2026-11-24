@@ -10,23 +10,29 @@
 
 ppsource<-function(img,UUID=FALSE,year=TRUE, sep="; ", return="citations"){
 uuid<-character()
+taxnam<-names(img)
+YY<-function(x){as.numeric(substr(as.character(x),1,4))}#year extractor
+
 
 for(i in 1:length(img)){
 if(!is.null(attr(img[[i]],"uuid"))){attr(img[[i]],"uuid")->uuid[i]}else{NA->uuid[i]}
 }
-NNA(uuid)->uuid
+taxnam[!is.na(uuid)]->taxnam
+uuid[!is.na(uuid)]->uuid
+#print(taxnam)
 
 rphylopic::get_attribution(uuid = uuid)->refs
 
-out<-matrix(character(),nrow=0,ncol=5)
+out<-matrix(character(),nrow=0,ncol=6)
 out<-as.data.frame(out)
-colnames(out)<-c("uuid","attribution","yr","license_abbr","license")
+colnames(out)<-c("taxnam","uuid","attribution","yr","license_abbr","license")
 
 #data.frame(attribution=character(length(uuid)),yr=NA,license_abbr=NA, license=NA,uuid=NA)
 
 for(i in uuid){
 refs$images[[i]]->refs_
 
+out[i,"taxnam"]<-taxnam[which(uuid==i)]
 out[i,"uuid"]<-refs_$image_uuid
 out[i,"attribution"]<-refs_$attribution
 out[i,"yr"]<-YY(as.Date(refs_$created))
@@ -52,12 +58,12 @@ out_<-c(out_,author_)
 }
 
 
-pout<-paste0(listout(out_,quotes=FALSE, sep=sep),". Licenses: ", listout(unique(out$license),quotes=FALSE, sep=sep))
+pout<-paste0(listout(out_,quotes=FALSE, sep=sep),". Licenses: ", listout(sort(unique(out$license)),quotes=FALSE, sep=sep))
 
 #print(pout)
 
 c(out_,"Licenses: ",unique(out$license))->out_
-if(return=="raw"){invisible(out)
+if(return=="raw"){return(out)
 }else if(return=="concatenated"){
-invisible(pout)}else{invisible(out_)}
+return(pout)}else{return(out_)}
 }

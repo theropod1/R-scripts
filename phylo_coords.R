@@ -157,4 +157,110 @@ if(root.edge!=FALSE & is.numeric(root.edge)) if(horiz) arrows(x[root]-root.edge,
 
   
   return(out)
+}##
+
+##function descendants()
+#' find all descendants of a numbered node
+#' @param node node number in tree
+#' @param tree a phylo-class object
+#' @param tree indices Logical indicating whether to return indices Default TRUE, otherwise tip.labels are returned
+#' @return the indices or tip.labels of all descendants of the specified node
+#' @export descendants
+descendants <- function(node,tree,indices=TRUE) { #find indices of all descendants of a node
+    if (node <= length(tree$tip.label)){ out<-as.integer(node)
+    }else{
+    ape::extract.clade(tree, node)$tip.label |> match(tree$tip.label)->out
+    } #pipe taxon names into indices
+    if(indices!=TRUE) tree$tip.label[out]->out
+
+    return(out)
+}##
+
+##function cladenum()
+#' find node and edge labels for minimum and maximum clades on a tree
+#' @param tree a phylo-class object (minimum requirements Nnode, edge and tip.label)
+#' @param include taxon or taxa to include in clade
+#' @param exclude (optional) taxon or taxa to exclude
+#' @param strict strict mode? (only return nodes if all c(include, exclude) found in tree)
+#' @return node or edge number for chosen minimum or maximum clade definition in tree
+#' @export cladenum
+
+cladenum <- function(tree, include, exclude = NULL, strict=FALSE, v=TRUE, ignore.case=TRUE) {
+if(ignore.case){ tolower->argfun #if not case-sensitive, transform all to lowercase
+tree$tip.label<-tolower(tree$tip.label)
+}else identity->argfun
+
+d <-tryCatch({match.arg(argfun(c(include,exclude)), argfun(tree$tip.label),several.ok=TRUE)}, error=function(e){return("match.arg() RETURNED ERROR: no taxa found")}) #see if any taxa are found, if not return NA to avoid error
+if(length(d)==1 && all(d=="match.arg() RETURNED ERROR: no taxa found")){
+message(d)
+return(structure(NA, def_type=d)) }else{
+
+if(!strict) match.arg(argfun(include),argfun(tree$tip.label),several.ok=TRUE)->include
+#if(v) message("positive constraints: ", paste(include,collapse=", "))
+
+if(!is.null(exclude)){
+if(!strict) match.arg(argfun(exclude),argfun(tree$tip.label),several.ok=TRUE)->exclude
+#if(v) message("negative constraints: ", paste(exclude,collapse=", "))
+if(v) message("max. clade: largest clade including ",paste(include,collapse=", "), " but not ", paste(exclude,collapse=", "))
+definition<-paste0("max. clade: largest clade including ",paste(include,collapse=", "), " but not ", paste(exclude,collapse=", "))
+}else{
+definition<- paste0("min. clade: smallest clade including ",paste(include,collapse=", "))
+if(v) message("min. clade: smallest clade including ",paste(include,collapse=", "))
 }
+
+if(strict==TRUE && !all(c(include,exclude)%in%tree$tip.label)){ #strict mode returns NA if not all taxa are found in the tree
+message("Clade undefined because ",paste(c(include,exclude)[which(!(c(include,exclude)%in%tree$tip.label))],collapse=", ")," not found in tree")
+clade<-NA
+attr(clade,"def_type")<-"clade undefined"
+attr(clade,"definition")<-definition
+}else{#non-strict mode returns the taxon as defined by all those taxa found in the tree
+
+minclade<-ape::getMRCA(tree, include) #find clade including all positive constraints
+if(is.null(minclade)) minclade<-which(tree$tip.label==include) #if only one included taxon is given, return tip number
+
+if(is.null(minclade)){ minclade<-NA
+attr(minclade,"def_type")<-"clade undefined"
+attr(minclade,"definition")<-NA
+}#if minclade is still NULL, return undefined clade
+
+if(!is.na(minclade) && !is.null(exclude) && length(exclude)>0){ ##maxclade
+  
+parent <- integer(tree$Nnode + length(tree$tip.label))
+  #print(parent)
+
+parent[tree$edge[, 2]] <- tree$edge[, 1] #define parent node for each end node
+
+p<- best <- minclade
+descendants(p,tree)->pdesc
+if(any(exclude%in%tree$tip.label[pdesc])){
+message("Clade undefined because ",paste(exclude[which(exclude%in%tree$tip.label[pdesc])],collapse=", ")," are part of minimum clade defined by ", paste(include,collapse=", "))
+
+clade<-NA # determine parent edge of best node recovered
+attr(clade,"def_type")<-"clade undefined"
+attr(clade,"definition")<-paste0(message("Clade undefined because ",paste(exclude[which(exclude%in%tree$tip.label[pdesc])],collapse=", ")," are part of minimum clade defined by ", paste(include,collapse=", ")))
+
+}else{
+
+maxruns<-0
+while(!any(exclude%in%tree$tip.label[pdesc]) && maxruns<1E6){
+#message("parent of node ", p,":")
+p<-parent[p] #update parent
+descendants(p,tree)->pdesc #find descendants of parent node
+if(!any(exclude%in%tree$tip.label[pdesc])) p->best #only save parent if exclusion condition still met
+#message("minclade at node ", p, " includes excluded taxa? ",any(exclude%in%tree$tip.label[pdesc]))
+#if(!any(exclude%in%tree$tip.label[pdesc])) message("saving p (",p,"):", best) #only save parent if condition still met
+
+}
+    
+clade<-which(tree$edge[, 2] == best)# determine parent edge of best node recovered
+attr(clade,"def_type")<-"edge"
+
+}
+return(clade)
+
+}else{
+attr(minclade,"def_type")<-"node"
+minclade}}
+
+}}##
+
